@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Reproducing the 2024 BIC bootstrap investigations</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Reproducing the 2024 BIC bootstrap
+investigations</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This vignette is a computational appendix to Silverman, Chan and
+Vincent (2024), <em>Bootstrapping multiple systems estimates to account
+for model selection</em>. It provides R code for selected investigations
+underlying the tables and figures in that paper using the installed
+version of <code>MultipleSystemsEstimation</code>. Readers should
+consult the paper for the results themselves: the published tables and
+figures are not duplicated here.</p>
+<p>The purpose is to reproduce the analyses, <strong>not</strong> to
+preserve the precise R code used in 2024. Where appropriate, the
+calculations use current package functions. This is not a tutorial; see
+<a href="bic-model-selection-and-bootstrap-inference.html">BIC model
+selection and bootstrap inference</a> for guidance on the methodology
+and its routine use.</p>
+<p>The paper’s Table 1, on existence of the extended maximum likelihood
+estimate, is not reproduced here; the package provides
+<code>check_extended_MLE()</code> for investigating this question.
+Tables 2–5 and Figures 3–4 are covered by the calculations below. The
+blocks for Figures 1–2 cover finite values of <code>ntop</code> only,
+and Table 6 is illustrated by the Korea calculation rather than
+reproduced in full. No plotting code is supplied.</p>
+<p>The estimates and confidence limits returned by the internal routines
+below refer to <strong>total population</strong>, including the observed
+cases. The public interface separately reports total population and the
+dark figure.</p>
+<p>The New Orleans calculations in Silverman, Chan and Vincent (2024)
+used a <strong>186-case</strong> version obtained from Table 1 of Bales,
+Murphy and Silverman (2020), which contained a small error. The package
+data have since been corrected to the <strong>185-case</strong> version
+used in the original New Orleans analysis. The calculations in this
+vignette use those corrected data. Consequently, the New Orleans
+confidence limits, model rankings and population estimates may differ
+from the published results, even when the same computational settings
+are used. This qualification applies to all New Orleans calculations
+below.</p>
+</div>
+<div id="running-the-reproduction-code" class="section level2">
+<h2>Running the reproduction code</h2>
+<p>By default, the reproduction code is displayed but <strong>not
+evaluated</strong> when the vignette is built. Set
+<code>run_examples &lt;- TRUE</code> in the initial <code>setup</code>
+chunk to execute it. The calculations underlying the figures store their
+numerical results in R objects without printing them. Readers can run
+the code in R and examine those objects as required.</p>
+<p>For a shorter trial run, leave <code>quick_check &lt;- TRUE</code>.
+This uses 10 bootstrap replications and limits the confidence-limit
+calculations to <code>ntop = 2</code>. For Table 4 and Figure 4 it uses
+the small Korea dataset in place of each requested dataset, so repeated
+results in those sections are intentional.</p>
+<p>Quick mode checks that the code runs; it does not reproduce the
+paper’s results or give reliable confidence limits. It still searches
+the original data for candidate models, so five-list calculations can
+take some time. The Korea substitutions do not test the larger
+datasets.</p>
+<p>To run the full calculations, set
+<code>run_examples &lt;- TRUE</code> and
+<code>quick_check &lt;- FALSE</code>. This uses 1000 bootstrap
+replications, finite searches up to <code>ntop = 60</code>, and
+unrestricted searches where specified. Some calculations involve
+extensive model searches or neighbourhood orderings and can be
+time-consuming. Numerical results may differ from those in the paper
+because of data corrections or changes in implementation.</p>
+<p>Run the following setup before the calculations below. It loads the
+data and the specialist internal functions used for these
+investigations. For routine analysis, use the public functions described
+in the methodology vignette linked above.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(MultipleSystemsEstimation)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>vary_ntop_bca <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;vary_ntop_bca&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>downhill_fit <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;downhill_fit&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>downhill_bootstrapcal <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;downhill_bootstrapcal&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>downhill_jackknifecal <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;downhill_jackknifecal&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>assemble_bic <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;assemble_bic&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>bootstrapcal <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;bootstrapcal&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>degree2_order <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;.degree2_order&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>bcaconfvalues <span class="ot">&lt;-</span> <span class="fu">getFromNamespace</span>(<span class="st">&quot;bcaconfvalues&quot;</span>, <span class="st">&quot;MultipleSystemsEstimation&quot;</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co"># Load all datasets used in the calculations.</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">data</span>(Kosovo)</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">data</span>(Korea)</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">data</span>(UKdat_5)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="fu">data</span>(NewOrl_5)</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co"># Check that the corrected New Orleans data are being used.</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">sum</span>(NewOrl_5[, <span class="fu">ncol</span>(NewOrl_5)]) <span class="sc">!=</span> <span class="dv">185</span>) {</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;This vignette requires the corrected 185-case New Orleans data.&quot;</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>}</span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co"># This check applies to the complete candidate space, before any ntop restriction.</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>checked_assemble <span class="ot">&lt;-</span> <span class="cf">function</span>(zdat, maxorder, <span class="at">expected_models =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">assemble_bic</span>(zdat, <span class="at">maxorder =</span> maxorder)</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">isTRUE</span>(z<span class="sc">$</span>enumeration_maxorder <span class="sc">==</span> z<span class="sc">$</span>requested_maxorder)) {</span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Enumeration order was reduced: requested &quot;</span>, z<span class="sc">$</span>requested_maxorder,</span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a>         <span class="st">&quot;; actual &quot;</span>, z<span class="sc">$</span>enumeration_maxorder,</span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a>         <span class="st">&quot;. Increase maxmodel before treating this search as exhaustive.&quot;</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a>  }</span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">nrow</span>(z<span class="sc">$</span>res)) <span class="fu">stop</span>(<span class="st">&quot;No candidate model has a valid original-data fit.&quot;</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(expected_models) <span class="sc">&amp;&amp;</span> <span class="fu">nrow</span>(z<span class="sc">$</span>res) <span class="sc">!=</span> expected_models) {</span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Expected &quot;</span>, expected_models, <span class="st">&quot; valid models, but found &quot;</span>, <span class="fu">nrow</span>(z<span class="sc">$</span>res),</span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a>         <span class="st">&quot;. Check the package version and data before comparing with the paper.&quot;</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a>  }</span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a>  z</span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a>}</span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co"># Check the requested searches and the published Kosovo and Korea model counts.</span></span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a>model_spaces <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a>  <span class="at">Kosovo =</span> <span class="fu">list</span>(<span class="at">data =</span> Kosovo, <span class="at">order =</span> <span class="fu">ncol</span>(Kosovo) <span class="sc">-</span> <span class="dv">2</span>, <span class="at">expected =</span> <span class="dv">113</span><span class="dt">L</span>),</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a>  <span class="at">Korea =</span> <span class="fu">list</span>(<span class="at">data =</span> Korea, <span class="at">order =</span> <span class="dv">2</span>, <span class="at">expected =</span> <span class="dv">6</span><span class="dt">L</span>),</span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>  <span class="at">UK2 =</span> <span class="fu">list</span>(<span class="at">data =</span> UKdat_5, <span class="at">order =</span> <span class="dv">2</span>, <span class="at">expected =</span> <span class="cn">NULL</span>),</span>
+<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a>  <span class="at">UK4 =</span> <span class="fu">list</span>(<span class="at">data =</span> UKdat_5, <span class="at">order =</span> <span class="dv">4</span>, <span class="at">expected =</span> <span class="cn">NULL</span>),</span>
+<span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a>  <span class="at">NewOrleans2 =</span> <span class="fu">list</span>(<span class="at">data =</span> NewOrl_5, <span class="at">order =</span> <span class="dv">2</span>, <span class="at">expected =</span> <span class="cn">NULL</span>),</span>
+<span id="cb1-46"><a href="#cb1-46" tabindex="-1"></a>  <span class="at">NewOrleans4 =</span> <span class="fu">list</span>(<span class="at">data =</span> NewOrl_5, <span class="at">order =</span> <span class="dv">4</span>, <span class="at">expected =</span> <span class="cn">NULL</span>)</span>
+<span id="cb1-47"><a href="#cb1-47" tabindex="-1"></a>)</span>
+<span id="cb1-48"><a href="#cb1-48" tabindex="-1"></a><span class="cf">for</span> (spec <span class="cf">in</span> model_spaces) {</span>
+<span id="cb1-49"><a href="#cb1-49" tabindex="-1"></a>  <span class="fu">invisible</span>(<span class="fu">checked_assemble</span>(spec<span class="sc">$</span>data, spec<span class="sc">$</span>order, spec<span class="sc">$</span>expected))</span>
+<span id="cb1-50"><a href="#cb1-50" tabindex="-1"></a>}</span>
+<span id="cb1-51"><a href="#cb1-51" tabindex="-1"></a><span class="fu">rm</span>(model_spaces, spec)</span></code></pre></div>
+<p>Results may differ between package versions. The setup checks the
+data, model counts and requested searches, and only reports a problem if
+a check fails. These checks repeat the original-data fits, but do not
+run bootstraps.</p>
+<p>A missing confidence limit (<code>NA</code>) means that a required
+fit or the BCa acceleration could not be obtained. The confidence-limit
+routine omits unsuccessful bootstrap estimates; missing limits should be
+investigated before using the results. Limits based on ten replications
+are only a check that the code runs, not a basis for inference.</p>
+</div>
+<div id="applications-and-published-results" class="section level2">
+<h2>Applications and published results</h2>
+<div id="table-2-kosovo" class="section level3">
+<h3>Table 2: Kosovo</h3>
+<p>For this dataset the 113 valid models (checked in the setup) permit
+exhaustive selection without restricting the maximum value of
+<code>ntop</code>. The following code computes the BCa bootstrap limits
+for the values of <code>ntop</code> considered in Table 2. The
+confidence-limit columns of <code>kos$inference</code> may be examined
+or extracted for comparison with the paper.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(Kosovo)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>kos <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="fu">ncol</span>(Kosovo) <span class="sc">-</span> <span class="dv">2</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>)</span></code></pre></div>
+<p>The selected rows, including the final calculated row, can be
+displayed below. In full mode the final row is unrestricted; in quick
+mode it is only <code>ntop = 2</code>. The same distinction applies to
+the Korea and degree-2 extracts below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>kos<span class="sc">$</span>inference[kos<span class="sc">$</span>inference<span class="sc">$</span>ntop <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="fu">max</span>(kos<span class="sc">$</span>inference<span class="sc">$</span>ntop)), ]</span></code></pre></div>
+</div>
+<div id="table-3-korea" class="section level3">
+<h3>Table 3: Korea</h3>
+<p>The setup checks that six valid models remain after checking
+existence of the extended maximum likelihood estimate. Table 3 compares
+restrictions to the first one or two models with unrestricted
+selection.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">data</span>(Korea)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>kor <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  Korea,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>kor<span class="sc">$</span>inference[</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  kor<span class="sc">$</span>inference<span class="sc">$</span>ntop <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="fu">max</span>(kor<span class="sc">$</span>inference<span class="sc">$</span>ntop)),</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  ,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  drop <span class="ot">=</span> <span class="cn">FALSE</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>]</span></code></pre></div>
+</div>
+<div id="figure-1-five-list-uk-data" class="section level3">
+<h3>Figure 1: Five-list UK data</h3>
+<p>Figure 1 compares confidence limits as <code>ntop</code> increases,
+allowing interactions to order 2 and order 4. The finite calculations
+are performed up to <code>ntop = 60</code>, with the chosen value of
+<code>nboot</code> (1000 in full mode). Full enumeration in every
+bootstrap sample is substantially more demanding and is not included in
+this block.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">data</span>(UKdat_5)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>uk2 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  UKdat_5,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_finite,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>uk4 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>  UKdat_5,</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">4</span>,</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_finite,</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>)</span></code></pre></div>
+<p>The confidence limits underlying the finite-<code>ntop</code>
+comparisons are available in <code>uk2$inference</code> and
+<code>uk4$inference</code>; the point estimates are in
+<code>uk2$estimate</code> and <code>uk4$estimate</code>. The figure
+itself is in the paper.</p>
+</div>
+<div id="figure-2-five-list-new-orleans-data" class="section level3">
+<h3>Figure 2: Five-list New Orleans data</h3>
+<p>Figure 2 carries out the corresponding comparisons for New Orleans.
+The current package data are corrected to 185 cases, rather than the 186
+cases used in the published figure. Accordingly the following generates
+an updated analysis whose numerical results may differ from those in the
+paper. As for Figure 1, this block covers finite <code>ntop</code>
+values only and omits the unrestricted comparison.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">data</span>(NewOrl_5)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>no2 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  NewOrl_5,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_finite,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>)</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>no4 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  NewOrl_5,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">4</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_finite,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.1</span>, <span class="fl">0.9</span>, <span class="fl">0.975</span>)</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>)</span></code></pre></div>
+<p>The corresponding numerical results are available in
+<code>no2$inference</code> and <code>no4$inference</code>, with point
+estimates in <code>no2$estimate</code> and
+<code>no4$estimate</code>.</p>
+</div>
+</div>
+<div id="further-investigations-from-the-2024-paper" class="section level2">
+<h2>Further investigations from the 2024 paper</h2>
+<div id="table-4-location-of-the-bootstrap-bic-minimum" class="section level3">
+<h3>Table 4: Location of the bootstrap BIC minimum</h3>
+<p>For each bootstrap sample, an exhaustive search finds the
+BIC-minimising model. Its position in the original-data BIC ordering is
+then recorded. Cumulative counts at selected ranks correspond to Table
+4. Replications with no finite BIC are reported separately rather than
+silently discarded. The code is potentially expensive, particularly for
+five-list data.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>bootstrap_optimal_ranks <span class="ot">&lt;-</span> <span class="cf">function</span>(zdat, maxorder, <span class="at">nboot =</span> <span class="dv">1000</span>, <span class="at">iseed =</span> <span class="dv">1234</span>) {</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="co"># Exercise the exhaustive-search code on a small dataset in quick mode.</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="cf">if</span> (quick_check) {</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    zdat <span class="ot">&lt;-</span> Korea</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    maxorder <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  }</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">checked_assemble</span>(</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>    zdat, <span class="at">maxorder =</span> maxorder</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  )</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">bootstrapcal</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>    z, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> iseed</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  )</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>  original_order <span class="ot">&lt;-</span> <span class="fu">order</span>(z<span class="sc">$</span>res[, <span class="st">&quot;BIC&quot;</span>])</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>  <span class="fu">vapply</span>(<span class="fu">seq_len</span>(nboot), <span class="cf">function</span>(b) {</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>    v <span class="ot">&lt;-</span> z<span class="sc">$</span>bootbic[, b]</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>    ok <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">is.finite</span>(v))</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">length</span>(ok)) <span class="fu">return</span>(<span class="cn">NA_integer_</span>)</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>    best <span class="ot">&lt;-</span> ok[<span class="fu">which.min</span>(v[ok])]</span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>    <span class="fu">match</span>(best, original_order)</span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>  }, <span class="fu">integer</span>(<span class="dv">1</span>))</span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>}</span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>rank_counts <span class="ot">&lt;-</span> <span class="cf">function</span>(r, <span class="at">ntop =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">50</span>, <span class="dv">100</span>)) {</span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>  <span class="fu">vapply</span>(</span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>    ntop,</span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>    <span class="cf">function</span>(k) <span class="fu">sum</span>(r <span class="sc">&lt;=</span> k, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>    <span class="fu">integer</span>(<span class="dv">1</span>)</span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>  )</span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>}</span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>ranks4 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>  <span class="at">Kosovo =</span> <span class="fu">bootstrap_optimal_ranks</span>(</span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a>    Kosovo, <span class="at">maxorder =</span> <span class="fu">ncol</span>(Kosovo) <span class="sc">-</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot</span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a>  ),</span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a>  <span class="at">UK2 =</span> <span class="fu">bootstrap_optimal_ranks</span>(UKdat_5, <span class="at">maxorder =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot),</span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a>  <span class="at">UK4 =</span> <span class="fu">bootstrap_optimal_ranks</span>(UKdat_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">nboot =</span> nboot),</span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a>  <span class="at">NewOrleans2 =</span> <span class="fu">bootstrap_optimal_ranks</span>(NewOrl_5, <span class="at">maxorder =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot),</span>
+<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a>  <span class="at">NewOrleans4 =</span> <span class="fu">bootstrap_optimal_ranks</span>(NewOrl_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">nboot =</span> nboot)</span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>)</span>
+<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a><span class="fu">sapply</span>(ranks4, rank_counts)</span>
+<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a></span>
+<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a><span class="co"># Counts above exclude failed replications; disclose their denominator.</span></span>
+<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a>rank_diagnostics4 <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">vapply</span>(ranks4, <span class="cf">function</span>(r) {</span>
+<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">attempted =</span> <span class="fu">length</span>(r), <span class="at">usable =</span> <span class="fu">sum</span>(<span class="fu">is.finite</span>(r)),</span>
+<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a>    <span class="at">failed =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.finite</span>(r)))</span>
+<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a>}, <span class="fu">numeric</span>(<span class="dv">3</span>)))</span>
+<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a>rank_diagnostics4</span></code></pre></div>
+</div>
+<div id="table-5-degree-2-ranking-for-kosovo" class="section level3">
+<h3>Table 5: Degree-2 ranking for Kosovo</h3>
+<p>The standard BIC ranking uses <code>degree = 1</code>; the
+neighbourhood-based ranking introduced in Section 5.1 uses
+<code>degree = 2</code>. For Kosovo the following calculations compare
+the confidence limits at each of the values of <code>ntop</code> used in
+Table 5. The degree-1 computation is the <code>kos</code> object from
+Table 2.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>kos_d2 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="fu">ncol</span>(Kosovo) <span class="sc">-</span> <span class="dv">2</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">2</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">nboot =</span> nboot,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>kos<span class="sc">$</span>inference[kos<span class="sc">$</span>inference<span class="sc">$</span>ntop <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="fu">max</span>(kos<span class="sc">$</span>inference<span class="sc">$</span>ntop)), ]</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>kos_d2<span class="sc">$</span>inference[kos_d2<span class="sc">$</span>inference<span class="sc">$</span>ntop <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="fu">max</span>(kos_d2<span class="sc">$</span>inference<span class="sc">$</span>ntop)), ]</span></code></pre></div>
+</div>
+<div id="figure-3-degree-1-and-degree-2-rankings" class="section level3">
+<h3>Figure 3: Degree-1 and degree-2 rankings</h3>
+<p>Figure 3 compares the two orderings for the UK and New Orleans
+five-list data, with maximum interaction order 4. Both calculations
+below include unrestricted searches in full mode and are particularly
+costly. The New Orleans caveat applies here too. The results contain the
+confidence limits needed to construct the figure; the figure itself is
+in the paper.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>uk_d1 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  UKdat_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>uk_d2 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  UKdat_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>no_d1 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  NewOrl_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">1</span>, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>)</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>no_d2 <span class="ot">&lt;-</span> <span class="fu">vary_ntop_bca</span>(</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  NewOrl_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">ntopmax =</span> ntop_unrestricted,</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  <span class="at">degree =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="figure-4-rank-of-the-bootstrap-optimal-model" class="section level3">
+<h3>Figure 4: Rank of the bootstrap-optimal model</h3>
+<p>For each bootstrap replication, the globally optimal model is located
+and its ranks under the ordinary BIC and degree-2 orderings are
+recorded. The pairs of ranks underlying Figure 4 are returned as data
+frames. As in the paper, replications whose ordinary rank is one are
+omitted from these pairs. Counts of usable, failed and rank-one
+replications are reported separately. The computation requires
+exhaustive model searches and is therefore not evaluated by default.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>bootstrap_rank_pair <span class="ot">&lt;-</span> <span class="cf">function</span>(zdat, maxorder,</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                                <span class="at">nboot =</span> <span class="dv">1000</span>, <span class="at">iseed =</span> <span class="dv">1234</span>) {</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="co"># Exercise the exhaustive-search code on a small dataset in quick mode.</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="cf">if</span> (quick_check) {</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>    zdat <span class="ot">&lt;-</span> Korea</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>    maxorder <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  }</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">checked_assemble</span>(</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>    zdat, <span class="at">maxorder =</span> maxorder</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  )</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">bootstrapcal</span>(</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>    z, <span class="at">nboot =</span> nboot, <span class="at">iseed =</span> iseed</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  )</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  r1_order <span class="ot">&lt;-</span> <span class="fu">order</span>(z<span class="sc">$</span>res[, <span class="st">&quot;BIC&quot;</span>])</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  r2_order <span class="ot">&lt;-</span> <span class="fu">degree2_order</span>(</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>    <span class="fu">rownames</span>(z<span class="sc">$</span>res),</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>    <span class="at">nlists =</span> <span class="fu">ncol</span>(z<span class="sc">$</span>xdata) <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>    <span class="at">maxorder =</span> z<span class="sc">$</span>maxorder</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  )</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  r1 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_integer_</span>, nboot)</span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>  r2 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_integer_</span>, nboot)</span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>  <span class="cf">for</span> (b <span class="cf">in</span> <span class="fu">seq_len</span>(nboot)) {</span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>    v <span class="ot">&lt;-</span> z<span class="sc">$</span>bootbic[, b]</span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>    ok <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">is.finite</span>(v))</span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">length</span>(ok)) <span class="cf">next</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>    best <span class="ot">&lt;-</span> ok[<span class="fu">which.min</span>(v[ok])]</span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>    r1[b] <span class="ot">&lt;-</span> <span class="fu">match</span>(best, r1_order)</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>    r2[b] <span class="ot">&lt;-</span> <span class="fu">match</span>(best, r2_order)</span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  }</span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>  usable <span class="ot">&lt;-</span> <span class="fu">is.finite</span>(r1) <span class="sc">&amp;</span> <span class="fu">is.finite</span>(r2)</span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>  keep <span class="ot">&lt;-</span> usable <span class="sc">&amp;</span> r1 <span class="sc">&gt;</span> <span class="dv">1</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a>  pairs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a>    <span class="at">ordinary =</span> r1[keep],</span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a>    <span class="at">degree2 =</span> r2[keep]</span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a>  )</span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a>  <span class="fu">attr</span>(pairs, <span class="st">&quot;replication_counts&quot;</span>) <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a>    <span class="at">attempted =</span> nboot, <span class="at">usable =</span> <span class="fu">sum</span>(usable), <span class="at">failed =</span> <span class="fu">sum</span>(<span class="sc">!</span>usable),</span>
+<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a>    <span class="at">rank_one_omitted =</span> <span class="fu">sum</span>(usable <span class="sc">&amp;</span> r1 <span class="sc">==</span> <span class="dv">1</span>), <span class="at">retained_pairs =</span> <span class="fu">sum</span>(keep)</span>
+<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a>  )</span>
+<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a>  pairs</span>
+<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a>}</span>
+<span id="cb11-50"><a href="#cb11-50" tabindex="-1"></a></span>
+<span id="cb11-51"><a href="#cb11-51" tabindex="-1"></a>kos_rank <span class="ot">&lt;-</span> <span class="fu">bootstrap_rank_pair</span>(</span>
+<span id="cb11-52"><a href="#cb11-52" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb11-53"><a href="#cb11-53" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="fu">ncol</span>(Kosovo) <span class="sc">-</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot</span>
+<span id="cb11-54"><a href="#cb11-54" tabindex="-1"></a>)</span>
+<span id="cb11-55"><a href="#cb11-55" tabindex="-1"></a></span>
+<span id="cb11-56"><a href="#cb11-56" tabindex="-1"></a>no2_rank <span class="ot">&lt;-</span> <span class="fu">bootstrap_rank_pair</span>(NewOrl_5, <span class="at">maxorder =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot)</span>
+<span id="cb11-57"><a href="#cb11-57" tabindex="-1"></a>no4_rank <span class="ot">&lt;-</span> <span class="fu">bootstrap_rank_pair</span>(NewOrl_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">nboot =</span> nboot)</span>
+<span id="cb11-58"><a href="#cb11-58" tabindex="-1"></a>uk2_rank <span class="ot">&lt;-</span> <span class="fu">bootstrap_rank_pair</span>(UKdat_5, <span class="at">maxorder =</span> <span class="dv">2</span>, <span class="at">nboot =</span> nboot)</span>
+<span id="cb11-59"><a href="#cb11-59" tabindex="-1"></a>uk4_rank <span class="ot">&lt;-</span> <span class="fu">bootstrap_rank_pair</span>(UKdat_5, <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">nboot =</span> nboot)</span>
+<span id="cb11-60"><a href="#cb11-60" tabindex="-1"></a></span>
+<span id="cb11-61"><a href="#cb11-61" tabindex="-1"></a>rank_sets <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb11-62"><a href="#cb11-62" tabindex="-1"></a>  <span class="at">Kos =</span> kos_rank,</span>
+<span id="cb11-63"><a href="#cb11-63" tabindex="-1"></a>  <span class="at">NO2 =</span> no2_rank,</span>
+<span id="cb11-64"><a href="#cb11-64" tabindex="-1"></a>  <span class="at">NO4 =</span> no4_rank,</span>
+<span id="cb11-65"><a href="#cb11-65" tabindex="-1"></a>  <span class="at">UK2 =</span> uk2_rank,</span>
+<span id="cb11-66"><a href="#cb11-66" tabindex="-1"></a>  <span class="at">UK4 =</span> uk4_rank</span>
+<span id="cb11-67"><a href="#cb11-67" tabindex="-1"></a>)</span>
+<span id="cb11-68"><a href="#cb11-68" tabindex="-1"></a></span>
+<span id="cb11-69"><a href="#cb11-69" tabindex="-1"></a><span class="co"># Numerical rank pairs underlying Figure 4.</span></span>
+<span id="cb11-70"><a href="#cb11-70" tabindex="-1"></a>rank_sets</span>
+<span id="cb11-71"><a href="#cb11-71" tabindex="-1"></a>rank_diagnostics_fig4 <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">vapply</span>(rank_sets, <span class="cf">function</span>(x) {</span>
+<span id="cb11-72"><a href="#cb11-72" tabindex="-1"></a>  <span class="fu">attr</span>(x, <span class="st">&quot;replication_counts&quot;</span>)</span>
+<span id="cb11-73"><a href="#cb11-73" tabindex="-1"></a>}, <span class="fu">numeric</span>(<span class="dv">5</span>)))</span>
+<span id="cb11-74"><a href="#cb11-74" tabindex="-1"></a>rank_diagnostics_fig4</span></code></pre></div>
+</div>
+<div id="table-6-downhill-model-search" class="section level3">
+<h3>Table 6: Downhill model search</h3>
+<p>Section 5.2 compares downhill search with exhaustive model
+enumeration. The current package contains separate internal routines for
+fitting, bootstrap replication and jackknife acceleration. For example,
+the Korea calculation can be carried out as follows:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>downhill_korea <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">estimate =</span> <span class="fu">downhill_fit</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>    <span class="at">counts =</span> Korea[, <span class="fu">ncol</span>(Korea)],</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>    <span class="at">desmat =</span> Korea[, <span class="sc">-</span><span class="fu">ncol</span>(Korea), <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  ),</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">bootreps =</span> <span class="fu">downhill_bootstrapcal</span>(</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>    Korea,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>    <span class="at">nboot =</span> nboot,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>    <span class="at">iseed =</span> <span class="dv">1234</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>    <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  ),</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">ahat =</span> <span class="fu">downhill_jackknifecal</span>(</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>    Korea,</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>    <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  )</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>)</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="fu">c</span>(</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>  <span class="at">estimate =</span> downhill_korea<span class="sc">$</span>estimate,</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>  <span class="at">acceleration =</span> downhill_korea<span class="sc">$</span>ahat</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>)</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>usable <span class="ot">&lt;-</span> <span class="fu">is.finite</span>(downhill_korea<span class="sc">$</span>bootreps)</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>downhill_korea<span class="sc">$</span>replication_counts <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>  <span class="at">attempted =</span> <span class="fu">length</span>(usable), <span class="at">usable =</span> <span class="fu">sum</span>(usable), <span class="at">failed =</span> <span class="fu">sum</span>(<span class="sc">!</span>usable)</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>)</span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>downhill_korea<span class="sc">$</span>replication_counts</span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a></span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>downhill_korea<span class="sc">$</span>confidence_limits <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a><span class="cf">if</span> (quick_check) {</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">&quot;Korea BCa limits omitted: ten replications are insufficient for meaningful tail estimates.&quot;</span>)</span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>} <span class="cf">else</span> <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(usable) <span class="sc">||</span> <span class="sc">!</span><span class="fu">is.finite</span>(downhill_korea<span class="sc">$</span>estimate) <span class="sc">||</span></span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>           <span class="sc">!</span><span class="fu">is.finite</span>(downhill_korea<span class="sc">$</span>ahat)) {</span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>  <span class="fu">warning</span>(<span class="st">&quot;Korea BCa limits omitted: investigate failed fits or unavailable acceleration.&quot;</span>)</span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>  <span class="co"># Extreme bias correction can make BCa probabilities undefined.</span></span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a>  p_below <span class="ot">&lt;-</span> <span class="fu">mean</span>(downhill_korea<span class="sc">$</span>bootreps <span class="sc">&lt;</span> downhill_korea<span class="sc">$</span>estimate)</span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a>  <span class="cf">if</span> (p_below <span class="sc">==</span> <span class="dv">0</span> <span class="sc">||</span> p_below <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a>    <span class="fu">warning</span>(<span class="st">&quot;Korea BCa limits omitted: all bootstrap estimates lie on one side of the point estimate.&quot;</span>)</span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>    downhill_korea<span class="sc">$</span>confidence_limits <span class="ot">&lt;-</span> <span class="fu">bcaconfvalues</span>(</span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>      <span class="at">bootreps =</span> downhill_korea<span class="sc">$</span>bootreps,</span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>      <span class="at">popest =</span> downhill_korea<span class="sc">$</span>estimate,</span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>      <span class="at">ahat =</span> downhill_korea<span class="sc">$</span>ahat,</span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>      <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>)</span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a>    )</span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a>    downhill_korea<span class="sc">$</span>confidence_limits</span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a>  }</span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a>}</span></code></pre></div>
+<p>In full mode this completes the Korea illustration with 95% BCa
+limits for total population. Quick mode omits those limits: ten
+bootstrap replications are insufficient for meaningful tail estimates.
+Full-mode limits are also withheld if any bootstrap estimate, the
+original estimate or acceleration is unavailable; failed replications
+are not silently removed.</p>
+<p>The other rows of Table 6 involve additional datasets and search
+settings. In particular, the five-list UK downhill result used several
+additional order-2 starting models, because the main-effects starting
+model can converge to a secondary local minimum. The Korea code above is
+therefore an illustration of the present computational interface,
+<strong>not</strong> a complete reproduction of every row in Table 6.
+Completing that reproduction requires specifying and documenting those
+additional starting-model calculations. The present
+<code>downhill_fit()</code> interface always starts from the
+main-effects model and has no argument for alternative starting models;
+those calculations are outside the scope of this vignette. The corrected
+New Orleans data also affect comparisons with the published rows.</p>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>The displayed code covers selected computational investigations from
+the 2024 paper using the installed package. Table 1 is omitted; Figures
+1–2 are covered for finite <code>ntop</code> only; and Table 6 is
+illustrated by Korea, with its interval calculated only in full mode.
+Tables 2–5 and Figures 3–4 are covered by numerical calculations,
+without plotting code. By default, computational chunks are displayed
+but not evaluated. Set <code>run_examples &lt;- TRUE</code> to run them,
+using <code>quick_check &lt;- TRUE</code> for reduced computational
+checks or <code>quick_check &lt;- FALSE</code> for the full settings
+described above. Differences may arise from corrections to the New
+Orleans data or later developments in the implementation.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Silverman, B. W., Chan, L. and Vincent, K. (2024). Bootstrapping
+Multiple Systems Estimates to Account for Model Selection.
+<em>Statistics and Computing</em>, <strong>34</strong>, 44. <a href="https://doi.org/10.1007/s11222-023-10346-9">doi:10.1007/s11222-023-10346-9.</a>.</p>
+<p>Bales, K., Murphy, L. and Silverman, B. W. (2020). How many
+trafficked people are there in Greater New Orleans? Lessons in
+measurement. <em>Journal of Human Trafficking</em>,
+<strong>6</strong>(4), 375–387. <a href="https://doi.org/10.1080/23322705.2019.1634936">doi:10.1080/23322705.2019.1634936.</a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

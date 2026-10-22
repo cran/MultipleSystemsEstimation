@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Sparse data, stepwise model selection and the bootstrap</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Sparse data, stepwise model selection and
+the bootstrap</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The published paper Chan, Silverman and Vincent (2021) develops
+methodology for multiple systems estimation when the observed capture
+table is sparse.</p>
+<p>The paper has two principal themes. First, sparse tables require
+explicit attention to the existence and identifiability of maximum
+likelihood estimates, including the possibility of extended maximum
+likelihood estimates in which some log-linear parameters are equal to
+<span class="math inline">\(-\infty\)</span>. Second, the paper develops
+a BCa bootstrap approach that takes account of model selection, in the
+context of a forward stepwise model-selection procedure.</p>
+<p>This vignette describes the treatment of sparse capture data and the
+stepwise model-selection and BCa inference procedure implemented in
+<code>MultipleSystemsEstimation</code>, using examples from the paper to
+illustrate the methods and reproduce selected results.</p>
+<p>The package has developed these approaches further since the original
+paper was published. Where possible, this vignette uses the current
+public interface, and the original simulation and supplementary routines
+are not all carried forward into <code>MultipleSystemsEstimation</code>.
+For full reproduction of the original computational material, including
+routines specific to the paper, see the historical
+<code>SparseMSE</code> package (now deprecated for current
+analyses).</p>
+</div>
+<div id="sparse-capture-data-and-extended-maximum-likelihood" class="section level2">
+<h2>Sparse capture data and extended maximum likelihood</h2>
+<p>The general treatment of capture histories, hierarchical log-linear
+models and sparse interactions is given in <a href="captures-and-models.html">Capture histories and hierarchical
+models</a>. Here we concentrate on the consequences of sparsity for
+estimation and stepwise model selection.</p>
+<p>Two lists are said to be <em>nonoverlapping</em> if no individual
+appears on both. The corresponding pairwise interaction is then minimal
+sparse, and its extended maximum likelihood estimate is minus infinity.
+The package handles such cases explicitly, rather than relying on
+numerical iteration towards increasingly negative values.</p>
+<p>This treatment builds on the general theory of Fienberg and Rinaldo
+(2012), specialised to multiple systems estimation in Chan, Silverman
+and Vincent (2021).</p>
+<div id="existence-and-identifiability" class="section level3">
+<h3>Existence and identifiability</h3>
+<p>Section 2.6 of the paper distinguishes two problems:</p>
+<ol style="list-style-type: decimal">
+<li>the maximum likelihood estimate may fail to exist, even allowing
+extended parameter values; and</li>
+<li>the parameters may be nonidentifiable.</li>
+</ol>
+<p>These are illustrated by the artificial three-list dataset in Table
+2, which is supplied with the package as <code>Artificial_3</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">data</span>(Artificial_3)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>Artificial_3</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt;   A B C  n</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; 1 1 0 0 40</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt; 2 0 1 0 30</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt; 3 0 0 1 20</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt; 4 1 1 0  6</span></span></code></pre></div>
+<p>The current function <code>check_extended_MLE()</code> checks both
+conditions for a specified hierarchical model. It returns 0 if both
+conditions are satisfied, 1 for failure of the Fienberg–Rinaldo
+existence condition, 2 for failure of identifiability, and 3 if both
+fail.</p>
+<p>The model containing all three two-list interactions is
+nonidentifiable, while the model containing only the AB interaction
+fails the Fienberg–Rinaldo existence condition. The model containing AC
+and BC, but not AB, passes both tests.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>MultipleSystemsEstimation<span class="sc">::</span><span class="fu">check_extended_MLE</span>(Artificial_3, <span class="st">&quot;[12,13,23]&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>MultipleSystemsEstimation<span class="sc">::</span><span class="fu">check_extended_MLE</span>(Artificial_3, <span class="st">&quot;[12,3]&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>MultipleSystemsEstimation<span class="sc">::</span><span class="fu">check_extended_MLE</span>(Artificial_3, <span class="st">&quot;[13,23]&quot;</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div>
+<p>These examples reproduce the three distinct behaviours displayed in
+Table 3 of the paper.</p>
+</div>
+</div>
+<div id="the-stepwise-model-selection-procedure" class="section level2">
+<h2>The stepwise model-selection procedure</h2>
+<p>Section 3.2 of the paper proposes a forward stepwise procedure.</p>
+<p>Starting with the main-effects model, every two-list effect not
+already included is considered. A candidate is discarded if adding it
+would lead to nonexistence or nonidentifiability. Among the remaining
+candidates, the effect with the smallest p-value is selected if that
+p-value is no greater than a specified threshold. The procedure stops
+when no remaining candidate meets this criterion.</p>
+<p>The paper ultimately recommends the threshold
+<code>pthresh = 0.02</code>.</p>
+<p>The current high-level implementation is
+<code>estimate_population_stepwise()</code>. The package extends the
+original pairwise procedure to hierarchical models containing
+higher-order interactions. By default, <code>maxorder = Inf</code>,
+allowing interactions of any order to be considered.</p>
+<p>For a point estimate without bootstrapping, restricting the model to
+pairwise interactions:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(Korea, <span class="at">pthresh =</span> <span class="fl">0.02</span>, <span class="at">maxorder =</span> <span class="dv">2</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>fit<span class="sc">$</span>estimate</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;    145.7778    268.7778</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>fit<span class="sc">$</span>fitted_model</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,3]&quot;</span></span></code></pre></div>
+<p>The same method is also available from the overall package
+interface:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">estimate_population</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  Korea,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;stepwise&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span></code></pre></div>
+<div id="allowing-higher-order-interactions" class="section level3">
+<h3>Allowing higher-order interactions</h3>
+<p>At each iteration, an interaction is eligible for inclusion only if
+all its lower-order interactions are already included in the model.
+Masked sparse interactions are excluded from consideration. Eligible
+interactions of different orders are considered together, rather than
+completing selection at one order before proceeding to the next. Thus
+the procedure preserves hierarchy throughout.</p>
+<p>For further details of hierarchy and masked sparse interactions, see
+<a href="captures-and-models.html">Capture histories and hierarchical
+models</a>.</p>
+<p>For the Kosovo data, the pairwise and unrestricted searches give
+different results:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(Kosovo)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>Kosovo_pairwise <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>Kosovo_unrestricted <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="cn">Inf</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>)</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="fu">c</span>(</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  <span class="at">pairwise =</span> Kosovo_pairwise<span class="sc">$</span>estimate[<span class="st">&quot;total&quot;</span>],</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>  <span class="at">unrestricted =</span> Kosovo_unrestricted<span class="sc">$</span>estimate[<span class="st">&quot;total&quot;</span>]</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt;     pairwise.total unrestricted.total </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt;           14341.66           18393.31</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="fu">c</span>(</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  <span class="at">pairwise =</span> Kosovo_pairwise<span class="sc">$</span>fitted_model,</span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>  <span class="at">unrestricted =</span> Kosovo_unrestricted<span class="sc">$</span>fitted_model</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>)</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt;           pairwise       unrestricted </span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; &quot;[12,13,14,23,34]&quot;      &quot;[134,12,23]&quot;</span></span></code></pre></div>
+<p>The pairwise search selects <code>[12,13,14,23,34]</code>, whereas
+the unrestricted search selects <code>[134,12,23]</code>. The latter
+model includes interactions 13, 14 and 34 implicitly, so its additional
+maximal interaction is the three-list term 134. The corresponding
+population estimates are approximately 14,342 and 18,393
+respectively.</p>
+</div>
+</div>
+<div id="bootstrap-inference" class="section level2">
+<h2>Bootstrap inference</h2>
+<p>Section 3.3 points out that confidence intervals conditional on the
+model selected from the observed data do not allow for uncertainty due
+to model selection.</p>
+<p>The paper therefore repeats the complete stepwise selection procedure
+for each bootstrap sample.</p>
+<p>The bootstrap samples are obtained by multinomial resampling of the
+observed capture histories. The BCa acceleration is calculated using a
+delete-one jackknife.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>fit_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  Korea,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">iseed =</span> <span class="dv">1234</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>fit_boot<span class="sc">$</span>estimate</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;    145.7778    268.7778</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>fit_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;                   0.025       0.1      0.9   0.975</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; dark_figure   0.3274105  70.82153 235.3031 276.828</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; total       123.3274105 193.82153 358.3031 399.828</span></span></code></pre></div>
+<p>To keep the vignette quick, the bootstrap calculations within this
+vignette use only 100 replications. A substantially larger number of
+bootstrap replications should be used for substantive inference. The
+resulting BCa confidence intervals are included only to demonstrate the
+operation of the code and may differ considerably from the published
+intervals quoted in the text, which are based on 1000 replications.</p>
+</div>
+<div id="applications-and-published-results" class="section level2">
+<h2>Applications and published results</h2>
+<div id="new-orleans-section-4.1" class="section level3">
+<h3>New Orleans: Section 4.1</h3>
+<p>The New Orleans dataset in Section 4.1 contains eight lists.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">data</span>(NewOrl)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">ncol</span>(NewOrl) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] 8</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">sum</span>(NewOrl[, <span class="fu">ncol</span>(NewOrl)])</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] 185</span></span></code></pre></div>
+<p>There are 28 possible pairs of lists, of which 18 are
+nonoverlapping.</p>
+<p>Applying the stepwise procedure with <code>pthresh = 0.02</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>NewOrl_fit <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  NewOrl,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>, </span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>NewOrl_fit<span class="sc">$</span>estimate</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;    998.6923   1183.6923</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>NewOrl_fit<span class="sc">$</span>fitted_model</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[45,1,2,3,6,7,8]&quot;</span></span></code></pre></div>
+<p>The paper reports that the selected model contains the two-list
+effect DE and gives a total population estimate of 1184.</p>
+<p>The published BCa 95% confidence interval, based on 1000 bootstrap
+replications, is (717, 1657).</p>
+<p>The corresponding calculation with the current package is:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>NewOrl_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  NewOrl,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">1000</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>NewOrl_boot<span class="sc">$</span>uncertainty</span></code></pre></div>
+<p>The bootstrap code for the full eight-list New Orleans data is
+displayed but not run at all, because even a small value of
+<code>nboot</code> leads to slow computation.</p>
+<p>The paper also considers the main-effects-only model, obtained when
+the threshold is 0.01 or smaller. It reports a point estimate of 997 and
+a 95% confidence interval of (644, 1618).</p>
+<p>Setting <code>pthresh = 0</code> ensures that no interactions are
+selected, giving the main-effects model. This can be examined as
+follows:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>NewOrl_main <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  NewOrl,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="dv">0</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>, </span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">1000</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>NewOrl_main<span class="sc">$</span>estimate</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>NewOrl_main<span class="sc">$</span>uncertainty</span></code></pre></div>
+</div>
+<div id="five-list-new-orleans-data" class="section level3">
+<h3>Five-list New Orleans data</h3>
+<p>Because several individual lists in the New Orleans data are very
+small, the paper also combines the four smallest lists to obtain a
+five-list version. This is supplied as <code>NewOrl_5</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">data</span>(NewOrl_5)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>NewOrl5_fit <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  NewOrl_5,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>)</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>NewOrl5_fit<span class="sc">$</span>estimate</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;    849.1511   1034.1511</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>NewOrl5_fit<span class="sc">$</span>fitted_model</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[1,2,3,4,5]&quot;</span></span></code></pre></div>
+<p>The paper reports that no two-list parameter is significant even at
+the 5% level. The point estimate is 1034, with BCa 95% confidence
+interval (589, 1703).</p>
+<p>The bootstrap calculation is:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>NewOrl5_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  NewOrl_5,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>, </span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>NewOrl5_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;                0.025      0.1      0.9    0.975</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; dark_figure 416.0089 416.0089 1110.799 1651.069</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; total       601.0089 601.0089 1295.799 1836.069</span></span></code></pre></div>
+</div>
+<div id="western-site-data-section-4.2" class="section level3">
+<h3>Western site data: Section 4.2</h3>
+<p>The Western site data contain five lists.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">data</span>(Western)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>Western_fit <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  Western,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>)</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>Western_fit<span class="sc">$</span>estimate</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt;    2138.384    2483.384</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>Western_fit<span class="sc">$</span>fitted_model</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[15,2,3,4]&quot;</span></span></code></pre></div>
+<p>The paper reports that the selected model contains the two-list
+effect AE and that the resulting point estimate is 2483.</p>
+<p>The reported BCa 95% confidence interval is (1293, 3670).</p>
+<p>It can be recalculated using:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>Western_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  Western,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">pthresh =</span> <span class="fl">0.02</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>, </span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>Western_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt;                0.025      0.1      0.9   0.975</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; dark_figure 1205.954 1205.954 2524.327 3064.25</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; total       1550.954 1550.954 2869.327 3409.25</span></span></code></pre></div>
+</div>
+</div>
+<div id="simulation-studies" class="section level2">
+<h2>Simulation studies</h2>
+<div id="comparison-with-the-bic-approach-section-3.4" class="section level3">
+<h3>Comparison with the BIC approach: Section 3.4</h3>
+<p>Section 3.4 compares the stepwise/BCa procedure with the BIC approach
+then implemented in <code>Rcapture</code>.</p>
+<p>The simulation starts from the model selected by the stepwise
+procedure for the five-list UK data. The fitted population size and
+capture-history probabilities are treated as the parameters of a
+simulated population, and 500 datasets are generated.</p>
+<p>For every simulated dataset:</p>
+<ul>
+<li>the BIC procedure selects a model and calculates the confidence
+interval available in <code>Rcapture</code>;</li>
+<li>the stepwise procedure selects a model afresh;</li>
+<li>a BCa interval is constructed for the stepwise estimate, repeating
+the selection within its bootstrap samples.</li>
+</ul>
+<p>The original computational routines used for this simulation are
+retained in the now-deprecated <code>SparseMSE</code> package rather
+than in <code>MultipleSystemsEstimation</code>. <code>SparseMSE</code>
+also retains other routines used for full reproduction of the
+computational and supplementary material associated with the 2021
+paper.</p>
+<p>The paper reports population-scale root mean square errors of 3057
+for the stepwise method and 5834 for BIC. On the logarithmic scale the
+corresponding values are 0.19 and 0.34.</p>
+<p>The paper also reports that the nominal 95% BCa interval covered the
+true value in 90% of the 500 simulations, compared with 61.4% for the
+<code>Rcapture</code> method. For nominal 80% intervals, the
+corresponding coverage rates were approximately 70% and 42.8%.</p>
+<p>The BIC procedure used in this comparison was that implemented in
+<code>Rcapture</code> at the time of the original investigation. It
+should not be confused with the BIC model-selection and bootstrap
+procedure implemented in <code>MultipleSystemsEstimation</code>, which
+incorporates subsequent developments; see <a href="bic-model-selection-and-bootstrap-inference.html">BIC model
+selection and bootstrap inference</a>.</p>
+<p>The purpose of this simulation was not to establish universal
+superiority of one procedure, but to demonstrate the importance of
+allowing model-selection uncertainty to enter the inference.</p>
+</div>
+<div id="choosing-the-threshold-section-4.3" class="section level3">
+<h3>Choosing the threshold: Section 4.3</h3>
+<p>The paper uses a larger simulation study to investigate the choice of
+the stepwise threshold.</p>
+<p>Seven datasets are used:</p>
+<ul>
+<li>the UK data, in full and five-list versions;</li>
+<li>the Netherlands data, in full and five-list versions;</li>
+<li>the New Orleans data, in full and five-list versions;</li>
+<li>the Western site data.</li>
+</ul>
+<p>For each dataset four generating models are considered:</p>
+<ul>
+<li>the full two-list model;</li>
+<li>the main-effects-only model;</li>
+<li>the model selected at threshold 0.001;</li>
+<li>the model selected at threshold 0.05.</li>
+</ul>
+<p>This gives 28 simulation scenarios.</p>
+<p>For each scenario the paper generates 1000 datasets and obtains
+estimates using thresholds 0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05,
+0.1, 1, where zero corresponds to the main-effects model and one to the
+full two-list model.</p>
+<p>Accuracy is assessed using the mean squared error of the logarithm of
+the estimated dark figure. Because the overall level of mean squared
+error differs substantially between scenarios, the paper combines the
+results by averaging the logarithm of the mean squared error across the
+28 scenarios. The minimum overall score occurs at
+<code>pthresh = 0.02</code>, which motivates the default threshold used
+by the package.</p>
+<p>The full threshold simulation is deliberately not run as part of the
+vignette. It involves 28 generating scenarios, 1000 datasets per
+scenario, and repeated model fitting across multiple thresholds, so it
+is better regarded as a published simulation study than as an ordinary
+package example.</p>
+<p>The original routines used to carry out this simulation study are
+retained in the now-deprecated <code>SparseMSE</code> package for full
+reproducibility of the paper.</p>
+</div>
+</div>
+<div id="relation-to-the-current-package" class="section level2">
+<h2>Relation to the current package</h2>
+<p>The original <code>SparseMSE</code> package accompanied Chan,
+Silverman and Vincent (2021). It is now deprecated for current analysis,
+but is retained for historical reproducibility. The present
+<code>MultipleSystemsEstimation</code> package provides a unified
+interface to this and other estimation methods.</p>
+<p>The default interface is
+<code>estimate_population(..., method = &quot;auto&quot;)</code>, which uses the
+BIC-based approach for up to five lists and the stepwise approach for
+six or more. The main user guide discusses the choice of methods in more
+detail.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Chan, L., Silverman, B. W. and Vincent, K. (2021). <em>Multiple
+Systems Estimation for Sparse Capture Data: Inferential Challenges When
+There Are Nonoverlapping Lists</em>. <em>Journal of the American
+Statistical Association</em>, <strong>116</strong>(535), 1297–1306. <a href="https://doi.org/10.1080/01621459.2019.1708748">doi:10.1080/01621459.2019.1708748.</a>.</p>
+<p>DiCiccio, T. J. and Efron, B. (1996). <em>Bootstrap Confidence
+Intervals</em>. <em>Statistical Science</em>, <strong>11</strong>(3),
+189–228.</p>
+<p>Fienberg, S. E. and Rinaldo, A. (2012). <em>Maximum Likelihood
+Estimation in Log-Linear Models</em>. <em>The Annals of Statistics</em>,
+<strong>40</strong>, 996–1023.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

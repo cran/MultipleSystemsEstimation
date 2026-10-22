@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>A User Guide to MultipleSystemsEstimation</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">A User Guide to
+MultipleSystemsEstimation</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Multiple systems estimation uses several incomplete lists of observed
+individuals to estimate the size of a population, including the number
+of individuals who appear on none of the lists, often referred to as the
+<em>dark figure</em>. The <code>MultipleSystemsEstimation</code> package
+implements Poisson log-linear methods for this problem, with particular
+attention to two important practical issues:</p>
+<ul>
+<li>sparse capture data, including combinations of lists with no
+observed overlap; and</li>
+<li>uncertainty introduced by choosing a log-linear model from the
+observed data.</li>
+</ul>
+<p>For most analyses the recommended starting point is the high-level
+function</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">estimate_population</span>(zdat)</span></code></pre></div>
+<p>whose default <code>method = &quot;auto&quot;</code> chooses an estimation
+method according to the number of lists. For data with up to five lists
+it uses BIC model selection; for six or more lists it uses the stepwise
+procedure. The individual methods can also be selected explicitly.</p>
+<p>The BIC/bootstrap approach follows Silverman, Chan and Vincent
+(2024). The stepwise procedure and the treatment of sparse-data
+existence and identifiability issues build on Chan, Silverman and
+Vincent (2021). The package also implements the Bayesian thresholding
+approach of Section 6 of Silverman (2020).</p>
+<p>This vignette is intended as an overall introduction to the package.
+Five companion vignettes give further details and, in some cases,
+paper-specific workflows:</p>
+<ul>
+<li><a href="captures-and-models.html">Capture histories and
+hierarchical models</a>: capture notation, hierarchical models and
+sparse interactions;</li>
+<li><a href="bic-model-selection-and-bootstrap-inference.html">BIC model
+selection and bootstrap inference</a>: BIC methodology and routine
+use;</li>
+<li><a href="reproduce-2024-bic-bootstrap.html">Reproducing the 2024 BIC
+bootstrap investigations</a>: selected computational investigations from
+the paper;</li>
+<li><a href="sparse-data-and-stepwise.html">Sparse data, stepwise model
+selection and the bootstrap</a>: the sparse-data and stepwise
+methodology and selected published results; and</li>
+<li><a href="bayesian-threshold.html">Bayesian-thresholding multiple
+systems estimation</a>: prior specification, thresholding and
+higher-order interactions.</li>
+</ul>
+</div>
+<div id="data-format" class="section level2">
+<h2>Data format</h2>
+<p>Suppose there are <span class="math inline">\(t\)</span> lists. Each
+observed individual has a <em>capture history</em> specifying the lists
+on which that individual occurs.</p>
+<p>Data supplied to the package have <span class="math inline">\(t+1\)</span> columns. The first <span class="math inline">\(t\)</span> columns contain zeros and ones
+indicating membership of the lists, and the final column contains the
+number of individuals observed with that capture history. Observable
+capture histories omitted from the data are treated as having count
+zero.</p>
+<p>The all-zero capture history is fundamentally different. It
+represents individuals who occur on none of the lists and therefore
+cannot be observed directly. Estimating the size of this unobserved
+group, the ‘dark figure’, is the central objective of multiple systems
+estimation.</p>
+<p>The package includes several example datasets. The three-list
+<code>Korea</code> data provide a compact illustration:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(Korea)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>Korea</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt;      b c d Count</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [1,] 0 0 1    41</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [2,] 0 1 0     5</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; [3,] 1 0 0     5</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; [4,] 1 1 0    54</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; [5,] 1 0 1     6</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [6,] 0 1 1     0</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; [7,] 1 1 1    12</span></span></code></pre></div>
+</div>
+<div id="start-with-estimate_population" class="section level2">
+<h2>Start with <code>estimate_population()</code></h2>
+<p>For routine use, begin with the default call:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">estimate_population</span>(Korea)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>fit<span class="sc">$</span>estimate</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;    34.16667   157.16667</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>fit<span class="sc">$</span>method</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;bic&quot;</span></span></code></pre></div>
+<p>Because <code>Korea</code> has three lists,
+<code>method = &quot;auto&quot;</code> selects the BIC method. The returned
+<code>estimate</code> gives both the estimated dark figure and the
+estimated total population.</p>
+<p>BIC enumeration is generally practical only for up to five lists.
+Six-list BIC analyses are computationally demanding even when restricted
+to pairwise interactions, and enumeration beyond six lists is
+impractical because of the rapid growth in the number of models. The
+<code>auto</code> method therefore selects stepwise fitting for six or
+more lists. See the appendix to <a href="captures-and-models.html">Capture histories and hierarchical
+models</a> for model counts for different numbers of lists and orders of
+models.</p>
+<p>The rest of this vignette explains the available methods and the
+common inferential ideas behind them.</p>
+</div>
+<div id="specifying-log-linear-models" class="section level2">
+<h2>Specifying log-linear models</h2>
+<p>For an observable capture history <span class="math inline">\(\omega\)</span>, the log-linear model is</p>
+<p><span class="math display">\[
+N_\omega \sim \operatorname{Poisson}(\mu_\omega),
+\qquad
+\log \mu_\omega =
+\sum_{\substack{\theta \in \mathcal{M}\\ \theta \subseteq \omega}}
+\alpha_\theta.
+\]</span></p>
+<p>Here <span class="math inline">\(\mathcal{M}\)</span> is the set of
+terms included in the model. The empty set <span class="math inline">\(\varnothing\)</span> corresponds to the intercept
+<span class="math inline">\(\alpha_\varnothing\)</span>. The fitted
+expected count for the unobserved all-zero capture history is <span class="math inline">\(\exp(\hat\alpha_\varnothing)\)</span>, and the
+population estimate is the total observed count plus this estimated
+unobserved count.</p>
+<p>Throughout the package, we consider only <em>hierarchical</em>
+log-linear models. In such a model, whenever an interaction is included,
+all its lower-order interactions and main effects are also included. The
+intercept and all main effects are always present. Thus, for example,
+including the three-way interaction between lists 1, 2 and 3 requires
+the inclusion of all three pairwise interactions between these
+lists.</p>
+<p>Hierarchical models can be specified by listing their highest-order
+terms in square brackets. For example, the model
+<code>[123, 24, 5]</code> includes the three-way interaction between
+lists 1, 2 and 3, the pairwise interaction between lists 2 and 4, and
+all five main effects, together with the intercept and the lower-order
+interactions implied by hierarchy.</p>
+<p>The <a href="captures-and-models.html">Capture histories and
+hierarchical models</a> vignette explains this notation in more detail,
+together with the generation of hierarchical models and the treatment of
+sparse interactions.</p>
+</div>
+<div id="bic-model-selection" class="section level2">
+<h2>BIC model selection</h2>
+<p>The BIC approach is the method used automatically for data with up to
+five lists. It is based on the methodology of Silverman, Chan and
+Vincent (2024). For details of the method, see <a href="bic-model-selection-and-bootstrap-inference.html">BIC model
+selection and bootstrap inference</a> and the help page for <a href="../help/estimate_population_bic">estimate_population_bic()</a>.</p>
+<p>A list of candidate hierarchical Poisson log-linear models is
+generated, in principle covering every possible model up to a specified
+maximum order, except those that cannot be fitted or are guaranteed to
+be outranked by other models. The candidates are fitted to the
+capture-history counts and ranked by Bayesian information criterion
+(BIC). The model with the smallest BIC gives the point estimate for the
+original data.</p>
+<p>The BIC method can be requested explicitly:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fit_bic <span class="ot">&lt;-</span> <span class="fu">estimate_population_bic</span>(Korea)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>fit_bic<span class="sc">$</span>estimate</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;    34.16667   157.16667</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>fit_bic<span class="sc">$</span>fitted_model</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,23]&quot;</span></span></code></pre></div>
+<p>With the appropriate calling arguments, the <code>bic_results</code>
+component contains the full list of models considered and their BIC
+values:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fit_bic <span class="ot">&lt;-</span> <span class="fu">estimate_population_bic</span>(Korea, <span class="at">return_details =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>fit_bic<span class="sc">$</span>details<span class="sc">$</span>bic_results<span class="sc">$</span>res</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;         abundance       BIC modelsorder</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [12,23]  157.1667  57.14081           2</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [12,3]   268.7778  58.96860           2</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [13,23]  123.4630  91.89711           2</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; [23,1]   126.1944 138.06368           2</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; [13,2]   126.9394 155.16018           2</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; [1,2,3]  141.9926 184.14431           1</span></span></code></pre></div>
+<div id="which-models-are-considered" class="section level3">
+<h3>Which models are considered?</h3>
+<p>The argument <code>maxorder</code> controls the maximum order of
+interactions considered by the method. If it is left at its default
+<code>NULL</code>, the package chooses:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Number of lists</th>
+<th align="right">Automatic <code>maxorder</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="right">3</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">4–5</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="right">6</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
+<p>Candidate models are generated as needed. With six lists, even with
+<code>maxorder = 2</code> there are 32,768 possible pairwise
+hierarchical models before excluding any models, which explains the
+automatic choice of stepwise fitting.</p>
+</div>
+</div>
+<div id="bootstrap-inference-after-bic-selection" class="section level2">
+<h2>Bootstrap inference after BIC selection</h2>
+<p>Choosing the best model and then calculating a confidence interval as
+though that model had been fixed in advance ignores the uncertainty
+arising from the model-selection step. The bootstrap approach of
+Silverman, Chan and Vincent (2024) addresses this by repeating BIC model
+selection within bootstrap samples.</p>
+<p>Bootstrap inference is requested through <code>nboot</code>; to keep
+the vignette quick, the examples below use only 100 bootstrap
+replications. A much larger number, for example 1000 or more, should be
+used for substantive inference.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>fit_bic_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_bic</span>(Korea,<span class="at">nboot =</span> <span class="dv">100</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>fit_bic_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;                 0.025       0.1      0.9    0.975</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; dark_figure   6.54714  13.09813 162.0565 294.0102</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; total       129.54714 136.09813 285.0565 417.0102</span></span></code></pre></div>
+<div id="restricting-model-selection-within-the-bootstrap" class="section level3">
+<h3>Restricting model selection within the bootstrap</h3>
+<p>Repeating an exhaustive model search for every bootstrap sample can
+be expensive. The 2024 methodology therefore ranks models by their BIC
+on the original data and allows bootstrap model selection to be
+restricted to the best-ranked models.</p>
+<p>With <code>ntopmodels = NULL</code>, the current defaults are:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Number of lists</th>
+<th align="left">Models retained for bootstrap inference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">2–3</td>
+<td align="left">All available models</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="left">Top 20 by original-data BIC</td>
+</tr>
+<tr class="odd">
+<td align="right">5–6</td>
+<td align="left">Top 100 by original-data BIC</td>
+</tr>
+</tbody>
+</table>
+<p>These defaults affect bootstrap and jackknife calculations only. The
+original-data point estimate is always based on the minimum-BIC model
+from the full candidate set allowed by <code>maxorder</code>.</p>
+<p>The number retained can be specified directly, for example:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>fit_bic_5 <span class="ot">&lt;-</span> <span class="fu">estimate_population_bic</span>( Korea,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">ntopmodels =</span> <span class="dv">5</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>fit_bic_5<span class="sc">$</span>uncertainty</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;                 0.025       0.1      0.9    0.975</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; dark_figure   6.54714  13.09813 162.0565 294.0102</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; total       129.54714 136.09813 285.0565 417.0102</span></span></code></pre></div>
+<p>The <code>uncertainty</code> component gives the endpoints of the
+bias-corrected and accelerated (BCa) confidence intervals obtained when
+model selection is allowed among all models retained for the bootstrap
+calculation.</p>
+</div>
+</div>
+<div id="sparse-capture-data" class="section level2">
+<h2>Sparse capture data</h2>
+<p>Sparse capture data require particular care. For example, suppose two
+lists A and B have no observed individuals in common. If the interaction
+AB is included in a fitted model, the likelihood increases towards its
+supremum as the corresponding parameter tends to <span class="math inline">\(-\infty\)</span>. It is therefore natural to work
+in an <em>extended maximum likelihood</em> framework, in which the
+estimated parameter for AB explicitly takes the value <span class="math inline">\(-\infty\)</span>. The fitted mean for the capture
+history AB, and for all capture histories containing both A and B, is
+then zero.</p>
+<p>AB is called a <em>minimal sparse interaction</em> because, by
+assumption, every individual list contains some observations, so neither
+A nor B is sparse. (Completely empty lists should simply be removed from
+consideration.)</p>
+<p>Now suppose AB is a sparse interaction and its parameter has been set
+to <span class="math inline">\(-\infty\)</span>. If ABC is also included
+in the model, no finite value assigned to the parameter for ABC can
+affect the fitted means. ABC is called a <em>masked sparse
+interaction</em> because it has a proper subset, AB, which is itself
+sparse.</p>
+<p>The package handles sparse interactions explicitly. Fuller details
+are given in <a href="captures-and-models.html">Capture histories and
+hierarchical models</a>.</p>
+<p>Two further problems can occur:</p>
+<ol style="list-style-type: decimal">
+<li>The maximum likelihood estimate may fail to exist, even allowing
+extended boundary values.</li>
+<li>The model parameters may fail to be identifiable.</li>
+</ol>
+<p>The package’s fitting routines check for both, so that unsuitable
+models are excluded from model selection and population estimation. The
+treatment of these issues builds on the general results of Fienberg and
+Rinaldo (2012), specialised to multiple systems estimation by Chan,
+Silverman and Vincent (2021).</p>
+</div>
+<div id="the-stepwise-method" class="section level2">
+<h2>The stepwise method</h2>
+<p>The second principal model-selection method is an extension of the
+forward stepwise procedure of Chan, Silverman and Vincent (2021). It can
+be requested explicitly for any supported number of lists and is
+selected automatically when there are six or more lists.</p>
+<p>The procedure starts with the main-effects model. At each stage it
+considers interactions that can be added while preserving the
+hierarchical structure of the model. Candidates that fail the existence
+or identifiability checks described above are discarded. Among the
+remaining candidates, the interaction with the smallest p-value is added
+if that p-value is below the threshold <code>pthresh</code>; otherwise
+the procedure stops. The procedure uses extended maximum likelihood,
+allowing minimal sparse interactions to be included in fitted models
+with their parameters estimated at <span class="math inline">\(-\infty\)</span>.</p>
+<p>The default is <code>pthresh = 0.02</code>, following the simulation
+study reported by Chan, Silverman and Vincent (2021). Setting
+<code>maxorder = 2</code> means that only two-list interactions are
+considered and the procedure agrees with the method studied in that
+paper.</p>
+<p>For example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">data</span>(Kosovo)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>fit_pairwise <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>fit_pairwise<span class="sc">$</span>estimate</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;    9941.664   14341.664</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>fit_pairwise<span class="sc">$</span>fitted_model</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,13,14,23,34]&quot;</span></span></code></pre></div>
+<p>The threshold can be changed using <code>pthresh</code>; for example,
+setting <code>pthresh = 0.01</code> makes the procedure more
+conservative about adding interactions.</p>
+<p>By default, <code>maxorder = Inf</code>, so interactions of any order
+can be considered. Setting <code>maxorder = 2</code> restricts the
+procedure to pairwise interactions. Higher-order interactions become
+eligible only when all their lower-order terms are already present.
+Masked sparse interactions are excluded from consideration, since their
+parameters cannot affect the fitted means.</p>
+<p>For the Kosovo data, allowing interactions of any order changes both
+the selected model and the population estimate:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>fit_step_unrestricted <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="cn">Inf</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">c</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">pairwise =</span> fit_pairwise<span class="sc">$</span>estimate[<span class="st">&quot;total&quot;</span>],</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">unrestricted =</span> fit_step_unrestricted<span class="sc">$</span>estimate[<span class="st">&quot;total&quot;</span>]</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;     pairwise.total unrestricted.total </span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt;           14341.66           18393.31</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="fu">c</span>(</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="at">pairwise =</span> fit_pairwise<span class="sc">$</span>fitted_model,</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  <span class="at">unrestricted =</span> fit_step_unrestricted<span class="sc">$</span>fitted_model</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt;           pairwise       unrestricted </span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; &quot;[12,13,14,23,34]&quot;      &quot;[134,12,23]&quot;</span></span></code></pre></div>
+<p>The pairwise search selects <code>[12,13,14,23,34]</code>, whereas
+the unrestricted search selects <code>[134,12,23]</code>. The latter
+hierarchy includes interactions 13, 14 and 34 implicitly and adds the
+three-list interaction 134. The corresponding population estimates are
+approximately 14,342 and 18,393.</p>
+<p>The vignette <a href="sparse-data-and-stepwise.html">Sparse data,
+stepwise model selection and the bootstrap</a> describes the published
+pairwise procedure in more detail.</p>
+</div>
+<div id="bootstrap-inference-after-stepwise-selection" class="section level2">
+<h2>Bootstrap inference after stepwise selection</h2>
+<p>Bootstrap inference for the stepwise method follows the same general
+approach as for BIC model selection, described above. In each bootstrap
+replicate, the stepwise selection procedure is repeated, so that the
+resulting inference takes account of model-selection uncertainty. BCa
+confidence intervals are calculated in the same way.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>fit_step_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population_stepwise</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="cn">Inf</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>fit_step_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;                0.025       0.1      0.9    0.975</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; dark_figure 4607.159  7321.288 16176.66 17656.52</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; total       9007.159 11721.288 20576.66 22056.52</span></span></code></pre></div>
+<p>Thus the BCa 95% confidence interval (based on only 100 bootstrap
+replications) for the total population is 9007 to 22057.</p>
+</div>
+<div id="fitting-a-specified-model" class="section level2">
+<h2>Fitting a specified model</h2>
+<p>Sometimes a particular log-linear model is to be fitted without using
+either BIC or stepwise model selection. In that case, use
+<code>method = &quot;fixed&quot;</code> or the routine
+<code>estimate_population_fixed()</code>.</p>
+<p>For example:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>fit_fixed <span class="ot">&lt;-</span> <span class="fu">estimate_population</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  Korea,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;fixed&quot;</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">model =</span> <span class="st">&quot;[12,23]&quot;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>fit_fixed<span class="sc">$</span>estimate</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;    34.16667   157.16667</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>fit_fixed<span class="sc">$</span>fitted_model</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,23]&quot;</span></span></code></pre></div>
+<p>Bootstrap inference for a fixed model is requested in the same way.
+In contrast to the BIC and stepwise procedures, the same specified model
+is fitted to every bootstrap and jackknife sample. There is no
+model-selection step inside the resampling procedure.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>fit_fixed_boot <span class="ot">&lt;-</span> <span class="fu">estimate_population</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  Korea,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;fixed&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">model =</span> <span class="st">&quot;[12,23]&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">nboot =</span> <span class="dv">100</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">return_details =</span> <span class="cn">TRUE</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>fit_fixed_boot<span class="sc">$</span>uncertainty</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;                  0.025       0.1       0.9    0.975</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; dark_figure   8.708197  12.68516  85.56239 121.9442</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; total       131.708197 135.68516 208.56239 244.9442</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>fit_fixed_boot<span class="sc">$</span>details<span class="sc">$</span>bootstrap_failed</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div>
+<p>With only 100 replications, the interval illustrates the calculation
+and should not be used for substantive inference. The displayed count
+records bootstrap replications that failed to give a finite population
+estimate and were omitted. Such failures can arise because resampling
+changes the pattern of zero counts, so that the specified model no
+longer yields a finite estimate.</p>
+<p>For all three likelihood-based methods (BIC, stepwise and fixed),
+bootstrap inference is optional, with <code>nboot = 0</code> by default.
+When bootstrap inference is requested, model selection is repeated in
+each replicate for BIC and stepwise estimation, whereas the specified
+model is retained for fixed-model estimation. All three methods use BCa
+confidence intervals, with the acceleration term calculated by a
+delete-one jackknife. The random-number seed can be controlled using
+<code>iseed</code>, and the probability levels for confidence limits can
+be changed using <code>alpha</code>.</p>
+</div>
+<div id="the-bayesian-thresholding-method" class="section level2">
+<h2>The Bayesian thresholding method</h2>
+<p>The package also provides the Bayesian thresholding method of
+Silverman (2020, Section 6). This can be selected by setting
+<code>method = &quot;bayesthresh&quot;</code> or by calling
+<code>estimate_population_bayesthresh()</code> directly. It is not
+selected by <code>method = &quot;auto&quot;</code>.</p>
+<p>The procedure starts with the log-linear model containing all
+two-list interactions, fitted using Markov chain Monte Carlo (MCMC). For
+each interaction parameter, the absolute value of its posterior mean is
+divided by its posterior standard deviation. Interactions for which this
+ratio is below <code>threshold</code> are discarded, and the model
+containing the retained interactions is refitted.</p>
+<p>Improper priors are used for the intercept and main effects. By
+default, proper normal priors are used for the interaction parameters,
+although improper priors can also be specified. The MCMC calculations
+use the <code>MCMCpack</code> package.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>fit_bayes <span class="ot">&lt;-</span> <span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  Kosovo, <span class="at">maxorder =</span> <span class="dv">3</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>)</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>fit_bayes<span class="sc">$</span>estimate</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;    7414.249   11814.249</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>fit_bayes<span class="sc">$</span>fitted_model</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[123,134]&quot;</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>fit_bayes<span class="sc">$</span>uncertainty</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt;             0.025       0.1       0.9    0.975</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; dark_figure  5615  6030.242  9039.142 10167.56</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; total       10015 10430.242 13439.142 14567.56</span></span></code></pre></div>
+<p>The returned <code>uncertainty</code> component gives posterior
+quantiles for both the dark figure and the total population. These
+provide the endpoints of Bayesian credible intervals, rather than the
+bootstrap confidence intervals used by the other methods.</p>
+<p>In this example, the 95% credible interval for the total population
+is 10,015 to 14,568.</p>
+<p>By default, <code>maxorder = 2</code>, so only two-list interactions
+are considered. Setting <code>maxorder = 3</code> allows three-list
+interactions, while <code>maxorder = 4</code> also permits four-list
+interactions. A higher-order interaction becomes eligible only if all
+its immediate lower-order interactions were retained at the preceding
+stage. At each stage, thresholding is applied only to the newly
+introduced interactions; lower-order interactions are not
+reconsidered.</p>
+<p>When improper priors are specified for the interaction parameters,
+the package checks models for identifiability and the Fienberg–Rinaldo
+existence criterion. If the initial model containing all two-list
+interactions fails either check, the procedure stops. If a proposed
+higher-order extension fails the existence check, the procedure returns
+the result from the preceding stage. These existence checks are not
+required when proper priors are used for the interaction parameters.
+With improper priors, masked sparse interactions are also excluded from
+consideration.</p>
+<p>For fuller details of the method, including prior specification,
+higher-order interactions and the treatment of sparse data, see <a href="bayesian-threshold.html">Bayesian-thresholding multiple systems
+estimation</a>. The general treatment of sparse interactions is
+explained in <a href="captures-and-models.html">Capture histories and
+hierarchical models</a>.</p>
+</div>
+<div id="which-method-should-i-use" class="section level2">
+<h2>Which method should I use?</h2>
+<p>For most users the answer is simple: begin with</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">estimate_population</span>(zdat)</span></code></pre></div>
+<p>and therefore allow <code>method = &quot;auto&quot;</code> to select the
+route.</p>
+<p>There are, however, reasons to choose explicitly:</p>
+<ul>
+<li>use <code>method = &quot;bic&quot;</code> when BIC model selection is
+specifically wanted and the number of lists makes exhaustive enumeration
+feasible;</li>
+<li>use <code>method = &quot;stepwise&quot;</code> when the Chan–Silverman–Vincent
+stepwise procedure is preferred, when sensitivity to
+<code>pthresh</code> is of interest, or for larger numbers of lists
+where BIC enumeration is unavailable or unattractive;</li>
+<li>use <code>method = &quot;fixed&quot;</code> when the model has been specified
+independently of these data-driven selection procedures;</li>
+<li>use <code>method = &quot;bayesthresh&quot;</code> if you prefer the Bayesian
+thresholding approach.</li>
+</ul>
+</div>
+<div id="looking-inside-the-result" class="section level2">
+<h2>Looking inside the result</h2>
+<p>All four methods share the following top-level components:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">names</span>(fit_bic)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;input&quot;        &quot;method&quot;       &quot;estimate&quot;     &quot;fitted_model&quot; &quot;uncertainty&quot; </span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [6] &quot;details&quot;</span></span></code></pre></div>
+<ul>
+<li><code>input</code>: the original call and data;</li>
+<li><code>method</code>: the method actually used, including after
+<code>method = &quot;auto&quot;</code>;</li>
+<li><code>estimate</code>: estimates of the dark figure and total
+population;</li>
+<li><code>fitted_model</code>: the supplied, selected or retained
+hierarchy;</li>
+<li><code>uncertainty</code>: confidence or credible endpoints for both
+estimates, or an explanatory message when bootstrap inference was not
+requested;</li>
+<li><code>details</code>: method-specific supporting output, or
+<code>&quot;not requested&quot;</code>.</li>
+</ul>
+<p>The fixed method also returns <code>masked_effects</code>.</p>
+<p>Set <code>return_details = TRUE</code> to retain supporting output.
+For BIC this includes the selected BIC and complete original-data
+enumeration; for the likelihood methods it includes the bootstrap
+estimates and BCa acceleration. The complete conditional GLM fit is
+returned only by the fixed method. Bayesian details include the
+thresholding information and complete posterior sample of total
+population size.</p>
+<p>The individual help pages give the complete definitions of returned
+components:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>?estimate_population</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>?estimate_population_bic</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>?estimate_population_stepwise</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>?estimate_population_fixed</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>?estimate_population_bayesthresh</span></code></pre></div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Chan, L., Silverman, B. W. and Vincent, K. (2021). Multiple Systems
+Estimation for Sparse Capture Data: Inferential Challenges When There
+Are Nonoverlapping Lists. <em>Journal of the American Statistical
+Association</em>, <strong>116</strong>(535), 1297–1306. <a href="https://doi.org/10.1080/01621459.2019.1708748">doi:10.1080/01621459.2019.1708748.</a>.</p>
+<p>DiCiccio, T. J. and Efron, B. (1996). Bootstrap Confidence Intervals.
+<em>Statistical Science</em>, <strong>11</strong>(3), 189–228.</p>
+<p>Fienberg, S. E. and Rinaldo, A. (2012). Maximum Likelihood Estimation
+in Log-Linear Models. <em>The Annals of Statistics</em>,
+<strong>40</strong>, 996–1023.</p>
+<p>Silverman, B. W. (2020). Multiple-systems analysis for the
+quantification of modern slavery: classical and Bayesian approaches.
+<em>Journal of the Royal Statistical Society: Series A (Statistics in
+Society)</em>, <strong>183</strong>(3), 691–736. <a href="https://doi.org/10.1111/rssa.12505">doi:10.1111/rssa.12505.</a>.</p>
+<p>Silverman, B. W., Chan, L. and Vincent, K. (2024). Bootstrapping
+Multiple Systems Estimates to Account for Model Selection.
+<em>Statistics and Computing</em>, <strong>34</strong>, 44. <a href="https://doi.org/10.1007/s11222-023-10346-9">doi:10.1007/s11222-023-10346-9.</a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

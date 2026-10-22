@@ -1,0 +1,41 @@
+Package: MultipleSystemsEstimation
+Title: Methods for Multiple Systems Estimation
+Version: 1.3.2
+Authors@R: c(
+    person(
+  given = c("Bernard", "W."),
+  family = "Silverman",
+  email = "bernard.silverman@stats.ox.ac.uk",
+  role = c("aut", "cre") ),
+    person("Lax", "Chan",
+           role = "ctb"),
+    person("Kyle", "Vincent",
+           role = "ctb")
+    )
+Description: Methods for multiple systems estimation using
+  Poisson log-linear models, with particular attention to sparse capture
+  data, model selection and its associated uncertainty, and Bayesian
+  thresholding of interaction effects. The package implements and extends methodology
+  from Silverman (2020) <doi:10.1111/rssa.12505>,
+  Chan, Silverman and Vincent (2021)
+  <doi:10.1080/01621459.2019.1708748>, and Silverman, Chan and Vincent
+  (2024) <doi:10.1007/s11222-023-10346-9>.
+URL: https://bernardsilverman.github.io/MultipleSystemsEstimation/,
+        https://bernardsilverman.co.uk/contact
+Depends: R (>= 4.2.0)
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
+Imports: lpSolve, MCMCpack
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+NeedsCompilation: no
+Config/roxygen2/version: 8.1.0
+Maintainer: Bernard W. Silverman <bernard.silverman@stats.ox.ac.uk>
+Packaged: 2026-10-13 21:30:22 UTC; berna
+Author: Bernard W. Silverman [aut, cre],
+  Lax Chan [ctb],
+  Kyle Vincent [ctb]
+Repository: CRAN
+Date/Publication: 2026-10-22 16:10:09 UTC

@@ -1,0 +1,232 @@
+test_that("tidy_lists aggregates duplicate histories and inserts zero cells", {
+  x <- data.frame(
+    A = c(1, 1, 0),
+    B = c(0, 0, 1),
+    count = c(2, 3, 4)
+  )
+
+  full <- tidy_lists(x, includezerocounts = TRUE)
+  positive <- tidy_lists(x, includezerocounts = FALSE)
+
+  expect_equal(sum(full$count), 9)
+  expect_equal(sum(positive$count), 9)
+  expect_true(any(full$count == 0))
+  expect_false(any(positive$count == 0))
+  expect_equal(
+    positive$count[positive$A == 1 & positive$B == 0],
+    5
+  )
+})
+
+test_that("tidy_lists removes empty and universal lists when requested", {
+  x <- cbind(
+    empty = c(0, 0, 0),
+    universal = c(1, 1, 1),
+    A = c(1, 1, 0),
+    B = c(0, 1, 1),
+    count = c(3, 2, 4)
+  )
+
+  out <- tidy_lists(
+    x,
+    remove_noninformative = TRUE
+  )
+
+  expect_equal(colnames(out), c("A", "B", "count"))
+  expect_equal(out$count, c(3, 4, 2))
+})
+
+test_that("tidy_lists removes duplicate list columns when requested", {
+  x <- cbind(
+    A = c(1, 0, 1),
+    Adup = c(1, 0, 1),
+    B = c(0, 1, 1),
+    count = c(2, 3, 4)
+  )
+
+  out <- tidy_lists(
+    x,
+    remove_noninformative = TRUE
+  )
+
+  expect_equal(ncol(out), 3)
+  expect_equal(out$count, c(2, 3, 4))
+})
+
+test_that("ingest_data identifies zero-descendant parameters", {
+  x <- data.frame(
+    A = c(1, 0),
+    B = c(0, 1),
+    C = c(0, 0),
+    count = c(5, 7)
+  )
+
+  ing <- ingest_data(x)
+
+  abc <- encode_capture(c(1, 1, 1))
+  expect_equal(unname(ing$nstar[abc]), 0)
+})
+
+test_that("fit_hier_model records boundary parameters at minus infinity", {
+  x <- data.frame(
+    A = c(1, 0),
+    B = c(0, 1),
+    C = c(0, 0),
+    count = c(5, 7)
+  )
+
+  fit <- fit_hier_model(
+    ingest_data(x),
+    "[123]"
+  )
+
+  abc <- encode_capture(c(1, 1, 1))
+
+  expect_true(abc %in% fit$maskedpars)
+  expect_false(abc %in% fit$neginfpars)
+  expect_identical(
+    unname(fit$coefficients[as.character(abc)]),
+    0
+  )
+})
+
+test_that("extended-MLE checking detects rank failure", {
+  data("Artificial_3", package = "MultipleSystemsEstimation")
+
+  ing <- ingest_data(Artificial_3)
+  parvec <- convert_from_hierarchy("[12,13,23]")
+
+  expect_equal(
+    check_extended_MLE(Artificial_3, parvec),
+    2
+  )
+
+  fit <- fit_hier_model(
+    ing,
+    "[12,13,23]"
+  )
+
+  expect_equal(fit$rank, 4)
+  expect_equal(
+    length(setdiff(parvec, fit$neginfpars)),
+    5
+  )
+  expect_equal(
+    sum(is.na(fit$coefficients)),
+    1
+  )
+})
+
+test_that("non-identifiable hierarchical fits are not assigned model scores", {
+  data("Artificial_3", package = "MultipleSystemsEstimation")
+
+  fit <- fit_hier_model(
+    ingest_data(Artificial_3),
+    "[12,13,23]"
+  )
+
+  expect_true(anyNA(fit$coefficients))
+  expect_true(is.na(fit$abundance))
+  expect_true(is.na(fit$bic))
+  expect_true(is.na(fit$aic))
+})
+
+test_that("jackknife NAs occur only in zero-count capture histories", {
+  data("Korea", package = "MultipleSystemsEstimation")
+  data("Artificial_3", package = "MultipleSystemsEstimation")
+
+  for (dat in list(Korea, Artificial_3)) {
+    z <- assemble_bic(
+      dat,
+      checkexist = TRUE,
+      removeFRfail = TRUE
+    )
+    z <- jackknifecal(z)
+
+    expect_false(any(
+      colSums(is.na(z$jackabund)) > 0 &
+        z$countsobserved > 0
+    ))
+
+    expect_false(any(
+      colSums(is.na(z$jackbic)) > 0 &
+        z$countsobserved > 0
+    ))
+  }
+})
+
+test_that("tidy_lists never removes the count column", {
+  x <- cbind(
+    A = c(1, 0, 1),
+    Adup = c(1, 0, 1),
+    B = c(0, 1, 1),
+    count = c(1, 2, 3)
+  )
+
+  out <- tidy_lists(
+    x,
+    remove_noninformative = TRUE
+  )
+
+  expect_equal(colnames(out)[ncol(out)], "count")
+  expect_equal(sum(out$count), sum(x[, "count"]))
+})
+
+test_that("bootstrap replicates retain at least one finite model score", {
+  data("Korea", package = "MultipleSystemsEstimation")
+  data("Artificial_3", package = "MultipleSystemsEstimation")
+
+  datasets <- list(
+    Korea = Korea,
+    Artificial_3 = Artificial_3
+  )
+
+  for (dat in datasets) {
+    z <- assemble_bic(
+      dat,
+      checkexist = TRUE,
+      removeFRfail = TRUE
+    )
+
+    z <- bootstrapcal(
+      z,
+      nboot = 20,
+      iseed = 1234,
+      checkexist = TRUE
+    )
+
+    expect_true(all(
+      apply(z$bootbic, 2, function(x) any(is.finite(x)))
+    ))
+  }
+})
+
+test_that("positive-count jackknife samples retain a finite model score", {
+  data("Korea", package = "MultipleSystemsEstimation")
+  data("Artificial_3", package = "MultipleSystemsEstimation")
+
+  for (dat in list(Korea, Artificial_3)) {
+    z <- assemble_bic(
+      dat,
+      checkexist = TRUE,
+      removeFRfail = TRUE
+    )
+
+    z <- jackknifecal(
+      z,
+      checkexist = TRUE
+    )
+
+    no_finite_bic <- apply(
+      z$jackbic,
+      2,
+      function(x) !any(is.finite(x))
+    )
+
+    expect_false(any(
+      no_finite_bic &
+        z$countsobserved > 0
+    ))
+  }
+})
+

@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Bayesian-thresholding multiple systems estimation</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Bayesian-thresholding multiple systems
+estimation</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This vignette describes the Bayesian-threshold approach to multiple
+systems estimation developed in Silverman (2020), together with its
+implementation in <code>estimate_population_bayesthresh()</code>.</p>
+<p>Only the aspects specific to Bayesian thresholding are considered
+here. General background on capture histories, hierarchical log-linear
+models and sparse interactions is given in the package vignette <a href="captures-and-models.html">Capture histories and hierarchical
+models</a>.</p>
+<p>The basic Bayesian-threshold procedure described here follows
+Silverman (2020). The hierarchical extensions to three- and four-list
+interactions, and the Fienberg-Rinaldo existence checks used with
+improper interaction priors, are additions in the present
+implementation; they were not part of the original paper.</p>
+</div>
+<div id="the-bayesian-threshold-procedure" class="section level2">
+<h2>The Bayesian-threshold procedure</h2>
+<div id="bayesian-thresholding" class="section level3">
+<h3>Bayesian thresholding</h3>
+<p>In multiple systems estimation, the choice of interaction terms in
+the log-linear model can have a substantial effect on the estimate of
+the unobserved population. Bayesian thresholding provides a way of
+selecting these interactions using a posterior distribution rather than
+repeated significance testing or an information criterion.</p>
+<p>The thresholding approach is a posterior-based method of model
+selection, rather than full Bayesian model averaging. Once the
+interactions have been selected, subsequent posterior inference is
+Bayesian, conditional on the selected model. It can be understood as an
+approximation to selection under a mixture prior with a point mass at
+zero and a symmetric continuous component; see Silverman (2020).</p>
+<p>Initially, consider models which only have main effects and two-list
+interactions. The approach begins with a model containing all possible
+interactions, fits that model using MCMC, and then removes interactions
+for which the posterior evidence of a non-zero effect is weak. The
+reduced model is then fitted again to obtain the final population
+estimate and selected posterior quantiles.</p>
+<p>The intercept and main effects are given independent improper flat
+priors. The interaction parameters are independent of these and of one
+another. By default, each interaction parameter has a Gaussian prior
+centred at zero with variance <code>prior_variance</code>; setting
+<code>prior = &quot;improper&quot;</code> instead gives the interaction parameters
+improper flat priors on <span class="math inline">\((-\infty,\infty)\)</span>.</p>
+<p>For each interaction parameter, the strength of evidence that it
+differs from zero is measured by</p>
+<p><span class="math display">\[
+\frac{|\operatorname{E}(\beta_{ij}\mid\text{data})|}
+     {\operatorname{sd}(\beta_{ij}\mid\text{data})}.
+\]</span></p>
+<p>Interactions for which this quantity is below the specified threshold
+are removed, and the model is then fitted again using the retained
+interactions.</p>
+<p>The default threshold is 2. Thus the procedure retains interactions
+for which the absolute posterior mean is at least two posterior standard
+deviations from zero.</p>
+<p>The method can also be extended to higher-order interactions. The
+two-list interactions are thresholded first, as described above. A
+higher-order interaction is eligible for consideration only if all its
+constituent lower-order interactions have been included. With improper
+interaction priors it must, in addition, be non-masked: masked sparse
+interactions are never eligible for inclusion. For the definitions of
+minimal sparse and masked sparse interactions, see <a href="captures-and-models.html">Capture histories and hierarchical
+models</a>.</p>
+<p>The model containing the retained two-list interactions together with
+all eligible three-list interactions is fitted, and the three-list
+interactions are thresholded using the same posterior mean to posterior
+standard deviation ratio. The resulting hierarchical model is then
+fitted once more to obtain the final population estimate and selected
+posterior quantiles.</p>
+<p>Note that all two-list interactions previously retained remain in the
+model, regardless of their threshold statistics in the subsequent fit.
+This ensures that the selected model remains hierarchical.</p>
+<p>With <code>maxorder = 4</code>, the process is repeated after the
+three-list stage. A four-list interaction ijkl is eligible only if all
+four constituent triples, ijk, ijl, ikl, and jkl, have been retained
+and, with improper priors, the four-list interaction is non-masked. The
+model containing all eligible four-list interactions is fitted, and
+these interactions are thresholded as before. The selected hierarchical
+model is then refitted to obtain the population posterior. If no
+four-list interactions are eligible, the completed lower-order fit
+supplies the result.</p>
+</div>
+<div id="mcmc-estimation" class="section level3">
+<h3>MCMC estimation</h3>
+<p>Posterior sampling is carried out using <code>MCMCpoisson()</code>,
+which applies Markov chain Monte Carlo to the Poisson log-linear model.
+The MCMC run produces posterior draws for the intercept, the main
+effects, and the interaction parameters in the model. These draws are
+used both for the thresholding step described above and, after the
+selected model has been refitted, for inference about population
+size.</p>
+<p>In the log-linear formulation, the intercept determines the fitted
+mean of the unobserved cell, corresponding to individuals appearing on
+none of the lists. For each posterior draw of the intercept <span class="math inline">\(\mu\)</span>, the corresponding size of the
+unobserved cell is <span class="math inline">\(\exp(\mu).\)</span></p>
+<p>Adding this quantity to the observed population gives a posterior
+draw for the total population size. The resulting collection of draws
+therefore gives the posterior distribution of the total population. By
+default, <code>estimate_population_bayesthresh()</code> reports
+posterior medians of the dark figure and total population, together with
+posterior quantiles at the probabilities supplied through
+<code>alpha</code>. The full set of posterior draws can also be returned
+if required.</p>
+</div>
+<div id="mcmc-settings-and-posterior-output" class="section level3">
+<h3>MCMC settings and posterior output</h3>
+<p>The principal MCMC settings can be controlled through arguments
+passed to <code>MCMCpoisson()</code>, including <code>burnin</code>,
+<code>mcmc</code>, <code>thin</code>, <code>tune</code>, and
+<code>seed</code>. The defaults are intended for routine use.
+<code>MCMCpoisson()</code> uses a reproducible default seed when
+<code>seed</code> is not specified.</p>
+<p>By default, the full posterior sample of total population size is not
+returned. It can be retained as <code>details$posterior</code>, when
+required, by setting <code>return_details = TRUE</code>.</p>
+</div>
+</div>
+<div id="a-basic-analysis" class="section level2">
+<h2>A basic analysis</h2>
+<p>The Kosovo data provide a useful illustration because allowing
+three-list interactions leads to a genuinely different selected model
+and a materially different population estimate.</p>
+<p>We first fit the Bayesian-threshold procedure using only two-list
+interactions.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>fit_bayes <span class="ot">&lt;-</span> <span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">2</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>),</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">return_details =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>fit_bayes<span class="sc">$</span>estimate</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;    9571.481   13971.481</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>fit_bayes<span class="sc">$</span>uncertainty</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt;                 0.025   0.975</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt; dark_figure  7836.223 11989.4</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; total       12236.223 16389.4</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>fit_bayes<span class="sc">$</span>fitted_model</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,13,14,23,34]&quot;</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>fit_bayes<span class="sc">$</span>details<span class="sc">$</span>threshold_statistics</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt;   EXH:ABA  EXH:OSCE  ABA:OSCE   EXH:HRW   ABA:HRW  OSCE:HRW </span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt;  8.464526  9.162971 12.540216  6.929278  0.196996 10.605549</span></span></code></pre></div>
+<p>With the default proper prior for the interaction parameters, the
+retained two-list interactions are</p>
+<p>EXH:ABA, EXH:OSCE, ABA:OSCE, EXH:HRW, and OSCE:HRW.</p>
+<p>The posterior median estimate of the total population is about
+14,000. The 2.5% and 97.5% posterior quantiles are about 12,200 and
+16,400 respectively.</p>
+<p>We can now allow three-list interactions by setting
+<code>maxorder = 3</code>. For this example we use a threshold of 2.5,
+rather than the default value of 2, in order to illustrate the
+thresholding of eligible three-list interactions.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>fit_bayes3 <span class="ot">&lt;-</span> <span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">3</span>, <span class="at">threshold =</span> <span class="fl">2.5</span>, <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">return_details =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>estimate</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;    5913.857   10313.857</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>uncertainty</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt;                0.025     0.975</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; dark_figure 4631.819  7694.699</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; total       9031.819 12094.699</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>fitted_model</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[123,14,34]&quot;</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>details<span class="sc">$</span>threshold_statistics</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;   EXH:ABA  EXH:OSCE  ABA:OSCE   EXH:HRW   ABA:HRW  OSCE:HRW </span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt;  8.464526  9.162971 12.540216  6.929278  0.196996 10.605549</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>details<span class="sc">$</span>eligible_triples</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;EXH:ABA:OSCE&quot; &quot;EXH:OSCE:HRW&quot;</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>details<span class="sc">$</span>triple_threshold_statistics</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; EXH:ABA:OSCE EXH:OSCE:HRW </span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt;     4.263698     2.451189</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>fit_bayes3<span class="sc">$</span>details<span class="sc">$</span>retained_triples</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; [1] &quot;EXH:ABA:OSCE&quot;</span></span></code></pre></div>
+<p>The same five two-list interactions are retained. Two three-list
+interactions are eligible for consideration:</p>
+<p>EXH:ABA:OSCE and EXH:OSCE:HRW.</p>
+<p>Their threshold statistics are about 4.26 and 2.45 respectively. At a
+threshold of 2.5, <code>EXH:ABA:OSCE</code> is retained while
+<code>EXH:OSCE:HRW</code> is thresholded out. The threshold was only
+used to illustrate how some of the three-list interactions can be
+retained and others thresholded. The default threshold of 2 retains both
+eligible three-list interactions and yields an estimate of 11,800; the
+2.5% and 97.5% posterior quantiles are about 10,000 and 14,600, still
+substantially different from the two-list result.</p>
+<div id="improper-priors" class="section level3">
+<h3>Improper priors</h3>
+<p>The preceding analysis used proper normal priors for the interaction
+parameters. The same thresholding procedure can instead be used with
+improper flat priors for the interaction parameters.</p>
+<p>With improper interaction priors, the posterior distribution of a
+minimal sparse interaction coefficient is concentrated at minus
+infinity: it takes that value with posterior probability one (Silverman,
+2020). Such effects are therefore handled before the MCMC fit, rather
+than sampled. They remain part of the fitted hierarchy and are reported
+in <code>details$minus_infinity_effects</code>, separately from effects
+estimated by MCMC. For the distinction between minimal sparse and masked
+sparse interactions, see <a href="captures-and-models.html">Capture
+histories and hierarchical models</a>. For example, with the five-list
+UK data:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>fit_improper <span class="ot">&lt;-</span> <span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  UKdat_5,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">prior =</span> <span class="st">&quot;improper&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">return_details =</span> <span class="cn">TRUE</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>fit_improper<span class="sc">$</span>estimate</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;    9444.267   12188.267</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>fit_improper<span class="sc">$</span>uncertainty</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;                 0.025       0.1      0.9    0.975</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; dark_figure  7908.409  8383.743 10540.99 11202.75</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; total       10652.409 11127.743 13284.99 13946.75</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>fit_improper<span class="sc">$</span>fitted_model</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[12,13,15,25,35,45]&quot;</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>fit_improper<span class="sc">$</span>details<span class="sc">$</span>minus_infinity_effects</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;LA:GP&quot;</span></span></code></pre></div>
+<p>Here <code>LA:GP</code>, corresponding to the interaction
+<code>15</code> in the numerical hierarchy notation, is retained in the
+model with its effect represented at minus infinity, and is therefore
+reported in <code>details$minus_infinity_effects</code>.</p>
+</div>
+<div id="four-list-interactions" class="section level3">
+<h3>Four-list interactions</h3>
+<p>The following call extends the Kosovo analysis to order four. Its
+output shows which four-list interactions, if any, pass the eligibility
+rule after the pairs and triples have been selected. Whether a candidate
+is ultimately retained depends on its posterior threshold statistic.
+This example illustrates how to inspect the stages; it does not require
+a four-list term to survive.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fit_bayes4 <span class="ot">&lt;-</span> <span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  Kosovo,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">maxorder =</span> <span class="dv">4</span>, <span class="at">threshold =</span> <span class="fl">2.5</span>, <span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">return_details =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>details<span class="sc">$</span>triple_status</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;three-list extension fitted&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>details<span class="sc">$</span>quad_status</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no eligible four-list interactions&quot;</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>details<span class="sc">$</span>eligible_quads</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>details<span class="sc">$</span>quad_threshold_statistics</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; numeric(0)</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>details<span class="sc">$</span>retained_quads</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>fitted_model</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[123,14,34]&quot;</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>estimate</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; dark_figure       total </span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;    5913.857   10313.857</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>fit_bayes4<span class="sc">$</span>uncertainty</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;                0.025     0.975</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; dark_figure 4631.819  7694.699</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; total       9031.819 12094.699</span></span></code></pre></div>
+<p>For <code>maxorder = 4</code>, these detail fields distinguish
+eligibility from selection: <code>eligible_quads</code> lists
+candidates, <code>quad_threshold_statistics</code> gives the statistics
+from the extension fit, and <code>retained_quads</code> lists those kept
+in the final hierarchy. <code>quad_status</code> explains when the
+four-list stage was not fitted. In particular, an empty
+<code>eligible_quads</code> means that no set of four lists had all four
+required triples; it does not mean that a four-list coefficient was
+tested and found too small.</p>
+</div>
+<div id="checking-existence-with-improper-interaction-priors" class="section level3">
+<h3>Checking existence with improper interaction priors</h3>
+<p>With improper flat interaction priors, additional existence checks
+are needed. Some models lack a maximum likelihood solution even with
+parameters allowed to equal minus infinity. The criterion of Fienberg
+and Rinaldo (2012) detects this situation; see also <a href="captures-and-models.html">Capture histories and hierarchical
+models</a>.</p>
+<p>With improper priors on the interaction parameters, failure of this
+criterion also implies that the posterior distribution is not proper.
+The package therefore applies the Fienberg-Rinaldo check when
+<code>prior = &quot;improper&quot;</code>.</p>
+<ul>
+<li><p><strong>Initial two-list fit.</strong> If the model containing
+all two-list interactions fails the Fienberg-Rinaldo check, the
+procedure stops before thresholding the two-list interactions.</p></li>
+<li><p><strong>Three-list extension.</strong> With
+<code>maxorder &gt;= 3</code>, the model containing the retained
+two-list interactions and all eligible three-list interactions is also
+checked. If it fails the criterion, the proposed three-list extension is
+not fitted and the completed two-list analysis is returned.</p></li>
+<li><p><strong>Four-list extension.</strong> With
+<code>maxorder = 4</code>, if eligible four-list terms remain after the
+three-list stage, the model containing the retained pairs and triples
+and all eligible four-list terms is checked. If it fails, the completed
+three-list analysis is returned. The four-list stage cannot proceed if
+the three-list extension was unavailable.</p></li>
+</ul>
+<p>The check is not applied with proper interaction priors: a posterior
+can be proper even when the corresponding maximum likelihood estimate
+does not exist (Forster, 2010).</p>
+</div>
+<div id="examples-with-improper-priors" class="section level3">
+<h3>Examples with improper priors</h3>
+<p>The two possible failures can be illustrated with the
+<code>Korea</code> and <code>Western</code> datasets.</p>
+<p>For <code>Korea</code>, the model containing all two-list
+interactions fails the Fienberg-Rinaldo criterion. Thus the
+improper-prior analysis stops before the two-list interactions can be
+thresholded.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">estimate_population_bayesthresh</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  Korea,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">prior =</span> <span class="st">&quot;improper&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; ! Bayesian thresholding cannot be applied: the full pairwise model fails the extended-MLE check.</span></span></code></pre></div>
+<p>A failure can also occur at a higher-order stage. With the
+<code>Western</code> data, <code>prior = &quot;improper&quot;</code>,
+<code>maxorder = 3</code> and the unusually low threshold
+<code>0.2</code>, the initial two-list fit and thresholding complete,
+but the model containing the retained two-list interactions together
+with all eligible three-list interactions fails the Fienberg-Rinaldo
+criterion. The completed two-list analysis is therefore returned without
+fitting the three-list extension.</p>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>Bayesian thresholding provides a parsimonious way to select
+interaction effects using posterior evidence, followed by Bayesian
+inference conditional on the selected model. The implementation allows
+either proper or improper priors for interaction effects, can extend the
+thresholding procedure hierarchically to three- and four-list
+interactions beyond the original pairwise formulation, and checks the
+relevant models against the Fienberg-Rinaldo existence criterion when
+improper priors are used for the interactions. The returned object
+reports the selected interaction structure and posterior inference for
+total population size, with the full posterior sample available
+optionally.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Silverman, B. W. (2020). <em>Multiple-systems analysis for the
+quantification of modern slavery: classical and Bayesian
+approaches</em>. <em>Journal of the Royal Statistical Society: Series A
+(Statistics in Society)</em>, <strong>183</strong>(3), 691–736. <a href="https://doi.org/10.1111/rssa.12505">doi:10.1111/rssa.12505.</a>.</p>
+<p>Fienberg, S. E. and Rinaldo, A. (2012). <em>Maximum likelihood
+estimation in log-linear models</em>. <em>The Annals of Statistics</em>,
+<strong>40</strong>, 996–1023.</p>
+<p>Forster, J. J. (2010). Bayesian inference for Poisson and multinomial
+log-linear models. <em>Statistical Methodology</em>, <strong>7</strong>,
+210–224.</p>
+<p>Martin, A. D., Quinn, K. M. and Park, J. H. (2011). <em>MCMCpack:
+Markov Chain Monte Carlo in R</em>. <em>Journal of Statistical
+Software</em>, <strong>42</strong>(9), 1–21.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
